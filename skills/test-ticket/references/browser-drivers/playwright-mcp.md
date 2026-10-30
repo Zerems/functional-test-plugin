@@ -6,8 +6,13 @@ and parameters checked against that version's README on 2026-10-30).
 Session modes supported: `persistent-profile` (default), `storage-state`. Setup writes one
 `.mcp.json` entry per session name (from `templates/mcp/playwright-mcp.json`):
 
-- `persistent-profile`: `npx -y @playwright/mcp@0.0.83 --browser <engine> --viewport-size <viewport> --user-data-dir .auth/profiles/<session>`
-- `storage-state`: `npx -y @playwright/mcp@0.0.83 --browser <engine> --isolated --storage-state <file> --viewport-size <viewport>`
+- `persistent-profile`: `npx -y @playwright/mcp@0.0.83 --browser <engine> --viewport-size <viewport> --user-data-dir .auth/profiles/<session> --output-dir .auth/screenshots`
+- `storage-state`: `npx -y @playwright/mcp@0.0.83 --browser <engine> --isolated --storage-state <file> --viewport-size <viewport> --output-dir .auth/screenshots`
+
+The server writes files only inside its allowed roots: screenshots go to its `--output-dir`,
+`<host root>/.auth/screenshots/`. An absolute path elsewhere (the scratchpad, for example) is
+refused (`File access denied … outside allowed roots`). `.auth/` is gitignored and must stay
+so.
 
 ## Tool names
 
@@ -22,7 +27,7 @@ session.
 | click | `browser_click` | `target`: the ref from the latest snapshot; `element`: a human description |
 | type | `browser_type` | `target`, `element`, `text`; `submit: true` presses Enter after |
 | press key | `browser_press_key` | `key` (`Enter`, `Escape`, `ArrowDown`, a character) |
-| screenshot | `browser_take_screenshot` | `filename`: an absolute path in the scratchpad; `fullPage` when useful |
+| screenshot | `browser_take_screenshot` | `filename`: a relative file name, e.g. `<KEY>-T3.png`, written under `.auth/screenshots/`; `fullPage` when useful |
 | close | `browser_close` | none; required after `session.mjs` reports `"setupRan":true`, before the next navigation |
 
 Useful extras of the same server: `browser_wait_for` (`text`, `textGone`, `time` ≤ 30 s),

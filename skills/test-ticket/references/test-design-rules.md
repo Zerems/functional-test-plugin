@@ -167,7 +167,7 @@ coming back to the tester:
 3. Context: case `T<n>` and the rule that produced it, the prefixed test data (ids).
 4. Numbered reproduction steps, from a known state.
 5. Expected (criterion number) and got (on-screen text, HTTP status and response excerpt,
-   screenshot in the scratchpad).
+   screenshot under `.auth/screenshots/`).
 6. Cause hypothesis: regression, incomplete change, deployment not effective, environment
    data, external dependency; `file:line` in the application repository when identified.
 7. Severity for the user (blocks / degrades / cosmetic): the developer and QA set the

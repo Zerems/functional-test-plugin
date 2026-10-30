@@ -30,7 +30,10 @@ comment), `references/tracker-notes.md` (tracker specifics), `references/browser
   e-mail addresses only in `testData.emailDomains`, listed in the report, never deleted.
 - Application repositories: read-only, never `git fetch`, never a modification.
 - **One mandatory pause: the plan validation.** Everything else runs on; the developer can
-  interrupt at any time. A login request (step 1) is the only other interruption.
+  interrupt at any time. A login request is the only other interruption.
+- **Never type a credential in a browser.** A UI case that needs an account that is not
+  already logged in → ask the human to log in in that session, or mark the case not
+  playable.
 - Commands that may open a browser (`session.mjs`) run **outside the sandbox**.
 - Write everything the user reads (plan, questions, report) in `config.language`; the
   scripts already localise their output. Case ids `T1…`, priorities `P1…P3` and the codes
@@ -79,8 +82,9 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/ticket.mjs <key|url|path> [--env <env>]
 ```
 
 Input: a key (`PROJ-123`, `owner/repo#12`), a tracker URL, or the path of an existing
-Markdown file (file mode: no tracker, no replay). Exit 2: ticket not found or usage; 3:
-secrets missing (name the variables to fill, never their values); 4: tracker unreachable.
+Markdown file (file mode: no tracker, no replay). Exit 0: dossier printed; 1: unclassified
+error; 2: usage, ticket not found or config; 3: secrets missing (name the variables to fill,
+never their values); 4: tracker unreachable.
 The header says which environment was used; if it differs from the preflighted one, rerun
 step 1 for it.
 
@@ -181,12 +185,13 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/api.mjs --env <env> [--channel <name>] [--aut
 
 `--channel` is needed only when several channels declare an `auth`. `--header` carries
 the context headers the API needs (tenant, scope: see the pitfalls file). Prints
-`<status> <METHOD> <path> (<ms> ms)` and the masked body. Exit **5 = 5xx = KO**; 0 = an
-answer (a 4xx is a result); 1 = authentication failed; 3 = secrets missing (case not
-playable); 4 = network error. A case needing an account that does not exist: create a
-dedicated prefixed test account through the API, with a generated throwaway password
-written to `<scratchpad>/<name>.json` as `{ "username", "password" }`, then
-`--credentials` it. An account imposed by the developer: they write the credentials file
+`<status> <METHOD> <path> (<ms> ms)` and the masked body. Exit 0 = an answer (2xx, 3xx, or
+a 4xx, which is a result); 1 = authentication failed or other error; 2 = usage or config;
+3 = secrets missing (case not playable); 4 = network error; **5 = 5xx = KO**. An API case
+needing an account that does not exist: create a dedicated prefixed test account through
+the API, with a generated throwaway password written to `<scratchpad>/<name>.json` as
+`{ "username", "password" }`, then `--credentials` it. Such an account serves a UI case
+only after the human logged in with it in that session. An account imposed by the developer: they write the credentials file
 themselves, never in the chat.
 
 **Eventual consistency**: after a write, re-read for up to 30 s before concluding (10
@@ -194,8 +199,10 @@ reads 3 s apart in one shell loop). A failure not reproduced on a second try →
 not KO.
 
 **Proofs**: for each case, note what was observed (HTTP status and excerpt, on-screen
-text, created id); for a KO, a screenshot in the scratchpad. Never a token, a password or
-a session.
+text, created id); for a KO, a screenshot through the driver's "screenshot" action, which
+writes under `<host root>/.auth/screenshots/` (relative file name such as `<KEY>-T3.png`;
+`.auth/` is gitignored and must stay so); cite that path in the report (no need to open the file). Never a token, a
+password or a session.
 
 **Early stop**: environment unreachable, authentication endpoint in 5xx, session
 impossible → INCONCLUSIVE with the reason; do not insist.

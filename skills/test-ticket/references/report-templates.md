@@ -27,7 +27,7 @@ Developer constraints: <or "none">
 **T2 — <title>**
 - Steps: <1., 2., 3.>
 - Expected: <…> (criterion <n>)
-- Got: <…> (screenshot: <scratchpad path>)
+- Got: <…> (screenshot: `.auth/screenshots/<KEY>-T2.png`)
 - Cause hypothesis: <regression | incomplete change | deployment not effective | environment data> — <file:line in the application repository, if identified>
 
 ### Data created
@@ -51,8 +51,9 @@ Developer constraints: <or "none">
 ```
 
 Rules: one table row per case; details only for KO cases; one short proof per case (never
-a token, a password or a session); KO screenshots stay in the scratchpad, never in a
-repository. In file mode the "move the ticket" step does not apply.
+a token, a password or a session); KO screenshots stay under `.auth/screenshots/`
+(gitignored), never committed to a repository. In file mode the "move the ticket" step
+does not apply.
 
 ## 2. Tracker comment
 

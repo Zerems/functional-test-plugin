@@ -58,11 +58,11 @@ test('mcpEntriesFor builds a persistent-profile playwright entry with the profil
   const entries = mcpEntriesFor(sampleConfig(), root);
   assert.deepEqual(entries.playwright, {
     command: 'npx',
-    args: ['-y', '@playwright/mcp@0.0.83', '--browser', 'chromium', '--viewport-size', '1440x900', '--user-data-dir', '.auth/profiles/front'],
+    args: ['-y', '@playwright/mcp@0.0.83', '--browser', 'chromium', '--viewport-size', '1440x900', '--user-data-dir', '.auth/profiles/front', '--output-dir', '.auth/screenshots'],
   });
   assert.deepEqual(entries['playwright-bo'], {
     command: 'npx',
-    args: ['-y', '@playwright/mcp@0.0.83', '--browser', 'chromium', '--isolated', '--storage-state', '.auth/bo.json', '--viewport-size', '1440x900'],
+    args: ['-y', '@playwright/mcp@0.0.83', '--browser', 'chromium', '--isolated', '--storage-state', '.auth/bo.json', '--viewport-size', '1440x900', '--output-dir', '.auth/screenshots'],
   });
   assert.deepEqual(entries['playwright-test'], { command: 'npx', args: ['playwright', 'run-test-mcp-server'] });
   assert.deepEqual(Object.keys(entries).sort(), ['playwright', 'playwright-bo', 'playwright-test']);
