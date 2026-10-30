@@ -4,7 +4,9 @@
  * Delivery = { state: 'effective'|'recent'|'absent'|'unknown', lastAt: ISO|null,
  *   evidence: [{ kind: 'commit'|'pr', repository, sha?, date: ISO|null, title }],
  *   partialRepos: string[], staleRefs: [{ repository, lastLocalAt, mergedAt }],
- *   repositoriesTouched: string[], reason: 'mode-none'|'tracker-unknown'|'no-ref-readable'|null }
+ *   repositoriesTouched: string[], reason: 'mode-none'|'tracker-unknown'|'no-ref-readable'|null,
+ *   unreadRepositories: [{ repository, reason: 'missing-ref'|'missing-repo' }],
+ *   branchHints: [{ repository, branch }] }
  * `reason` (a code, localised by the caller) explains an `unknown` state; evidence carries no prose.
  * Git is only ever read, never fetched: the dev fetches.
  */
@@ -134,11 +136,28 @@ function staleRefsOf(merged, lastLocalCommitAt, slugs) {
  * run (mode none, tracker without PRs, no readable ref) the state is `unknown`.
  */
 export function assessDelivery({ mode, git, tracker, branch, now = new Date(), recentMinutes }) {
-  const delivery = { state: 'unknown', lastAt: null, evidence: [], partialRepos: [], staleRefs: [], repositoriesTouched: [], reason: null };
+  const delivery = {
+    state: 'unknown',
+    lastAt: null,
+    evidence: [],
+    partialRepos: [],
+    staleRefs: [],
+    repositoriesTouched: [],
+    reason: null,
+    unreadRepositories: [],
+    branchHints: [],
+  };
   if (mode === 'none') return { ...delivery, reason: 'mode-none' };
 
   const useGit = mode === 'git-log' || mode === 'both';
   const useTracker = mode === 'tracker' || mode === 'both';
+  if (useGit && git !== null) {
+    delivery.unreadRepositories = [
+      ...(git.missingRef ?? []).map((repository) => ({ repository, reason: 'missing-ref' })),
+      ...(git.missingRepo ?? []).map((repository) => ({ repository, reason: 'missing-repo' })),
+    ];
+    delivery.branchHints = [...(git.branchHints ?? [])];
+  }
   const gitReadable = useGit && git !== null && (git.hits.length > 0 || git.checked.length > 0);
   const trackerReadable = useTracker && Array.isArray(tracker);
   if (!gitReadable && !trackerReadable) {

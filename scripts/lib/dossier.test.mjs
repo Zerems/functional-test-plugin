@@ -124,6 +124,49 @@ test('buildDossier in git-log mode matches the host repository "." through root'
   }
 });
 
+test('buildDossier drops the host repository PRs only when "." is not a delivery repository', async () => {
+  const prs = [mergedPr(), mergedPr({ repository: 'my-tests', title: 'WV-12 tests' })];
+  const pureTests = await build({ tracker: fakeTracker({ prs }), deps: { now: NOW, root: '/work/my-tests' } });
+  assert.deepEqual(pureTests.prs.map((p) => p.repository), ['front-app']);
+  assert.deepEqual(pureTests.delivery.repositoriesTouched, ['front-app']);
+
+  const config = baseConfig({
+    delivery: { mode: 'tracker', recentMinutes: 60, repositoriesDir: '..', repositories: [{ name: '.', channel: 'front' }, { name: 'backend-api', channel: 'api' }] },
+  });
+  const declared = await build({ config, tracker: fakeTracker({ prs }), deps: { now: NOW, root: '/work/my-tests' } });
+  assert.deepEqual(declared.prs.map((p) => p.repository), ['front-app', 'my-tests']);
+  assert.deepEqual(declared.delivery.repositoriesTouched, ['front-app', 'my-tests']);
+});
+
+test('the dossier reports unread repositories and branch hints', async () => {
+  const gitLog = () => ({
+    hits: [],
+    missingRef: ['backend-api'],
+    missingRepo: ['mobile-app'],
+    branchHints: [{ repository: 'front-app', branch: 'origin/feature/wv-12-filter' }],
+    checked: ['front-app'],
+    lastLocalCommitAt: {},
+    slugs: {},
+  });
+  const config = baseConfig({ delivery: { ...example.delivery, mode: 'git-log', recentMinutes: 60 } });
+  const dossier = await build({ config, deps: { now: NOW, root: '/unused', gitLog } });
+  assert.equal(dossier.delivery.state, 'absent');
+  assert.deepEqual(dossier.delivery.unreadRepositories, [
+    { repository: 'backend-api', reason: 'missing-ref' },
+    { repository: 'mobile-app', reason: 'missing-repo' },
+  ]);
+  assert.deepEqual(dossier.delivery.branchHints, [{ repository: 'front-app', branch: 'origin/feature/wv-12-filter' }]);
+  assert.ok(dossier.warnings.some((w) => w.startsWith('backend-api: origin/testing could not be read')));
+  assert.ok(dossier.warnings.some((w) => w.startsWith('mobile-app: origin/testing could not be read')));
+  const text = renderDossier(dossier, en, { now: NOW });
+  assert.match(text, /^Could not read origin\/testing in backend-api \(no such remote branch\)\.$/m);
+  assert.match(text, /^Could not read origin\/testing in mobile-app \(not a git clone\)\.$/m);
+  assert.match(text, /^Branches citing the key \(not merged\): front-app: origin\/feature\/wv-12-filter$/m);
+  const french = renderDossier(dossier, fr, { now: NOW });
+  assert.match(french, /Impossible de lire origin\/testing dans backend-api/);
+  assert.match(french, /Branches citant la clé \(non mergées\) : front-app/);
+});
+
 test('buildDossier in file mode yields delivery unknown and no replay', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ft-dossier-'));
   try {

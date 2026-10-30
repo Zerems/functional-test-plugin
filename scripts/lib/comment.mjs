@@ -71,6 +71,21 @@ function contentLines(text) {
     .filter((l) => l.length > 0);
 }
 
+const VERDICTS = ['OK', 'KO', 'INCONCLUSIVE'];
+
+/** Does the decoded data line have what every reader relies on (env, verdict, cases with an id)? */
+function isReportShape(data) {
+  return (
+    data !== null &&
+    typeof data === 'object' &&
+    !Array.isArray(data) &&
+    typeof data.env === 'string' &&
+    VERDICTS.includes(data.verdict) &&
+    Array.isArray(data.cases) &&
+    data.cases.every((c) => c !== null && typeof c === 'object' && typeof c.id === 'string')
+  );
+}
+
 function parseDataLine(lines) {
   const line = lines.find((l) => l.startsWith(DATA_MARKER));
   if (line === undefined) return null;
@@ -80,11 +95,10 @@ function parseDataLine(lines) {
   } catch {
     return null;
   }
-  if (data === null || typeof data !== 'object' || Array.isArray(data)) return null;
+  if (!isReportShape(data)) return null;
   return {
     ...data,
     v: data.v ?? 1,
-    cases: Array.isArray(data.cases) ? data.cases : [],
     candidates: Array.isArray(data.candidates) ? data.candidates : [],
   };
 }

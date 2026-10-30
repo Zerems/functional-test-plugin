@@ -66,6 +66,14 @@ test('planWarnings warns once per partially delivered repository and per stale r
   ]);
 });
 
+test('planWarnings warns once per repository git could not read', () => {
+  const delivery = { ...effective, unreadRepositories: [{ repository: 'api', reason: 'missing-ref' }, { repository: 'bo', reason: 'missing-repo' }] };
+  assert.deepEqual(run({ delivery }).lines, [
+    'api: origin/testing could not be read (no such remote branch) - the delivery check ignored this repository.',
+    'bo: origin/testing could not be read (not a git clone) - the delivery check ignored this repository.',
+  ]);
+});
+
 test('planWarnings reads the French locale', () => {
   const fr = translator('fr');
   const result = run({ t: fr, issue: { status: 'Not a bug' } });

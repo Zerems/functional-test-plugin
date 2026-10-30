@@ -214,3 +214,21 @@ test('candidates.mjs warns on stderr and flags the JSON when the tracker search 
     host.cleanup();
   }
 });
+
+test('candidates.mjs skips a comment whose data line has a malformed shape instead of throwing', async () => {
+  const host = makeHost({ ...example, tracker: { type: 'custom', module: './tracker.mjs', projects: ['WV'] } });
+  try {
+    const header = formatComment(report(['T1']), translator('en')).split('\n')[0];
+    const text = `${header}\n[test-ticket:data] {"env":"testing","verdict":"OK","candidates":["T1"],"cases":[null]}`;
+    const issue = { key: 'WV-9', id: '9', title: 'Bad data line', status: 'Test OK', type: 'Story', url: '', labels: [], parent: null, links: [], body: { format: 'text', content: '' }, comments: [{ author: 'QA', date: '2026-10-22T10:00:00.000Z', body: { format: 'text', content: text } }] };
+    fs.writeFileSync(
+      path.join(host.dir, 'tracker.mjs'),
+      `export default () => ({ type: "custom", searchWithMarker: async () => ["WV-9"], getIssue: async () => (${JSON.stringify(issue)}) });\n`,
+    );
+    const result = await run(host.dir);
+    assert.equal(result.code, 0, result.stderr);
+    assert.equal(result.stdout, 'No pending candidate.\n');
+  } finally {
+    host.cleanup();
+  }
+});

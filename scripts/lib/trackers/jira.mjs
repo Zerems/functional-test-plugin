@@ -2,7 +2,6 @@
  * Read-only Jira tracker (REST API v3 + dev-status). The token never appears in
  * an error or an output.
  */
-import { basename } from 'node:path';
 import { MissingSecretError, TrackerError } from '../errors.mjs';
 
 const ISSUE_FIELDS = 'summary,status,issuetype,description,comment,issuelinks,parent,labels,components';
@@ -11,14 +10,16 @@ const PR_APPLICATION_TYPES = ['bitbucket', 'GitHub', 'stash'];
 const KEY_PATTERN = /\b([A-Za-z][A-Za-z0-9_]*-\d+)\b/;
 const EXACT_KEY = /^[A-Za-z][A-Za-z0-9_]*-\d+$/;
 
-/** Jira tracker; `fetchImpl` is injectable for tests, `root` excludes the host repository's PRs. */
-export function createJiraTracker(trackerConfig, env, { fetchImpl = fetch, root } = {}) {
+/**
+ * Jira tracker; `fetchImpl` is injectable for tests. A marker search cut at the page cap is
+ * reported on `lastSearchTruncated`.
+ */
+export function createJiraTracker(trackerConfig, env, { fetchImpl = fetch } = {}) {
   if (!trackerConfig.baseUrl) throw new Error('tracker.baseUrl is required for the jira tracker');
   const base = trackerConfig.baseUrl.replace(/\/+$/, '');
   const missing = ['JIRA_EMAIL', 'JIRA_API_TOKEN'].filter((name) => !env[name]);
   if (missing.length > 0) throw new MissingSecretError(missing);
   const authorization = 'Basic ' + Buffer.from(`${env.JIRA_EMAIL}:${env.JIRA_API_TOKEN}`).toString('base64');
-  const hostRepository = root ? basename(root) : null;
 
   async function readJson(path) {
     const response = await fetchImpl(base + path, {
@@ -32,6 +33,7 @@ export function createJiraTracker(trackerConfig, env, { fetchImpl = fetch, root 
     return response.json();
   }
 
+  /** `{ issues, truncated }`: `truncated` when the page cap was hit with pages left. */
   async function search(jql, fields, maxResults = 50, maxPages = 10) {
     const issues = [];
     let nextPageToken = null;
@@ -43,11 +45,12 @@ export function createJiraTracker(trackerConfig, env, { fetchImpl = fetch, root 
       nextPageToken = body.nextPageToken ?? null;
       if (!nextPageToken) break;
     }
-    return issues;
+    return { issues, truncated: nextPageToken !== null };
   }
 
-  return {
+  const tracker = {
     type: 'jira',
+    lastSearchTruncated: false,
     keyPattern: KEY_PATTERN,
     trackerStatusesAreLabels: false,
 
@@ -67,24 +70,39 @@ export function createJiraTracker(trackerConfig, env, { fetchImpl = fetch, root 
     async searchWithMarker(marker) {
       const quoted = marker.replace(/[\\"]/g, '\\$&');
       const jql = `project in (${trackerConfig.projects.join(', ')}) AND comment ~ "${quoted}" ORDER BY updated DESC`;
-      return (await search(jql, ['key'])).map((issue) => issue.key);
+      const { issues, truncated } = await search(jql, ['key']);
+      tracker.lastSearchTruncated = truncated;
+      return issues.map((issue) => issue.key);
     },
 
+    /**
+     * PRs of the first application type that has some. A type answering an HTTP error counts
+     * as having none; null (unknown) when every type failed.
+     */
     async getLinkedPullRequests(issue) {
+      let failures = 0;
       for (const applicationType of PR_APPLICATION_TYPES) {
-        const body = await readJson(
-          `/rest/dev-status/latest/issue/detail?issueId=${issue.id}&applicationType=${applicationType}&dataType=pullrequest`,
-        );
-        const prs = normalizePullRequests(body, hostRepository);
+        let body;
+        try {
+          body = await readJson(
+            `/rest/dev-status/latest/issue/detail?issueId=${issue.id}&applicationType=${applicationType}&dataType=pullrequest`,
+          );
+        } catch (error) {
+          if (!(error instanceof TrackerError)) throw error;
+          failures += 1;
+          continue;
+        }
+        const prs = normalizePullRequests(body);
         if (prs.length > 0) return prs;
       }
-      return [];
+      return failures === PR_APPLICATION_TYPES.length ? null : [];
     },
 
     async whoami() {
       return (await readJson('/rest/api/3/myself')).displayName ?? '';
     },
   };
+  return tracker;
 }
 
 /** Raw `GET /issue/{key}?expand=renderedFields` response -> Issue (bodies stay HTML). */
@@ -120,13 +138,12 @@ export function normalizeIssue(body, baseUrl) {
   };
 }
 
-/** dev-status response -> PullRequest[], skipping `excludeRepository` when given. */
-export function normalizePullRequests(body, excludeRepository = null) {
+/** dev-status response -> PullRequest[] (every repository, the host's included). */
+export function normalizePullRequests(body) {
   const prs = [];
   for (const detail of body.detail ?? []) {
     for (const pr of detail.pullRequests ?? []) {
       const repository = String(pr.repositoryName ?? '').replace(/^[^/]*\//, '');
-      if (excludeRepository && repository === excludeRepository) continue;
       const status = pr.status === 'MERGED' || pr.status === 'OPEN' ? pr.status : 'DECLINED';
       prs.push({
         repository,

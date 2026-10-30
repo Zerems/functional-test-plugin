@@ -21,8 +21,10 @@ never print them. Credentials have fixed variable names, read from `.env` by the
   text comes back as one `<p>` per line; the parser ignores blank lines.
 - **Linked pull requests**: from the dev-status API (`bitbucket`, `GitHub` and `stash`
   application types). Jira links a PR as soon as its branch or a commit cites the key, so
-  promotion PRs between environment branches also appear; the host repository's own PRs
-  are excluded.
+  promotion PRs between environment branches also appear. When the host repository is a
+  pure test repository (`"."` is not among `delivery.repositories`), the dossier drops its
+  own PRs; when `"."` is declared, they count as a delivery. A dev-status type answering an
+  error counts as having no PR; when every type fails the PRs are unknown.
 - **Pitfalls**: a migrated key answers with the new key (read `key` in the dossier, not the
   input); a 404/410 on an endpoint is first an obsolete API variant, not an access issue.
 

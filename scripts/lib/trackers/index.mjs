@@ -29,7 +29,7 @@ export async function createTracker(config, env, { fetchImpl = fetch, root } = {
   const trackerConfig = config.tracker;
   switch (trackerConfig.type) {
     case 'jira':
-      return createJiraTracker(trackerConfig, env, { fetchImpl, root });
+      return createJiraTracker(trackerConfig, env, { fetchImpl });
     case 'file':
       return createFileTracker(root);
     case 'github':

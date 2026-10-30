@@ -251,6 +251,29 @@ test('assessDelivery is unknown when no repository could be read in git-log mode
   const result = assessDelivery({ mode: 'git-log', git, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(result.state, 'unknown');
   assert.equal(result.reason, 'no-ref-readable');
+  assert.deepEqual(result.unreadRepositories, [
+    { repository: 'api', reason: 'missing-ref' },
+    { repository: 'front', reason: 'missing-repo' },
+  ]);
+  assert.deepEqual(result.branchHints, []);
+});
+
+test('assessDelivery carries unread repositories and branch hints of a readable git check', () => {
+  const git = {
+    hits: [],
+    missingRef: [],
+    missingRepo: ['bo'],
+    branchHints: [{ repository: 'api', branch: 'origin/feature/wv-1' }],
+    checked: ['api'],
+    lastLocalCommitAt: {},
+  };
+  const result = assessDelivery({ mode: 'git-log', git, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
+  assert.equal(result.state, 'absent');
+  assert.deepEqual(result.unreadRepositories, [{ repository: 'bo', reason: 'missing-repo' }]);
+  assert.deepEqual(result.branchHints, [{ repository: 'api', branch: 'origin/feature/wv-1' }]);
+  const tracker = assessDelivery({ mode: 'tracker', git: null, tracker: [], branch: 'testing', now: NOW, recentMinutes: 60 });
+  assert.deepEqual(tracker.unreadRepositories, []);
+  assert.deepEqual(tracker.branchHints, []);
 });
 
 test('assessDelivery unknown for mode none and for tracker mode with null prs', () => {

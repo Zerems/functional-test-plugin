@@ -55,9 +55,9 @@ test('normalizeIssue tolerates a bare issue', () => {
   assert.equal(issue.title, '');
 });
 
-test('normalizePullRequests maps fields and statuses, and excludes a repository', () => {
-  const prs = normalizePullRequests(devStatusFixture, 'wizim-e2e');
-  assert.deepEqual(prs.map((p) => p.repository), ['wizim-backend-v2', 'wizim-front-v2', 'wizim-api']);
+test('normalizePullRequests maps fields and statuses and keeps every repository', () => {
+  const prs = normalizePullRequests(devStatusFixture);
+  assert.deepEqual(prs.map((p) => p.repository), ['wizim-backend-v2', 'wizim-front-v2', 'wizim-api', 'wizim-e2e']);
   assert.deepEqual(prs[0], {
     repository: 'wizim-backend-v2',
     title: 'Backend change',
@@ -72,7 +72,6 @@ test('normalizePullRequests maps fields and statuses, and excludes a repository'
   assert.equal(prs[2].status, 'DECLINED');
   assert.equal(prs[2].mergedAt, null);
   assert.deepEqual(normalizePullRequests({}), []);
-  assert.equal(normalizePullRequests(devStatusFixture).length, 4);
 });
 
 test('normalizeKey accepts a browse URL with query string and lower case', () => {
@@ -155,13 +154,28 @@ test('searchWithMarker follows nextPageToken', async () => {
   assert.equal(new URL(fetchImpl.calls[1].url).searchParams.get('nextPageToken'), 'p2');
 });
 
-test('getLinkedPullRequests excludes the host repository and tries application types in order', async () => {
+test('searchWithMarker flags a search cut at the page cap', async () => {
+  const endless = fakeFetch([{ match: () => true, body: { issues: [{ key: 'WV-1' }], nextPageToken: 'more' } }]);
+  const tracker = create(endless);
+  assert.equal(tracker.lastSearchTruncated, false);
+  assert.equal((await tracker.searchWithMarker('[test-ticket]')).length, 10);
+  assert.equal(endless.calls.length, 10);
+  assert.equal(tracker.lastSearchTruncated, true);
+
+  const finite = fakeFetch([{ match: () => true, body: { issues: [{ key: 'WV-1' }] } }]);
+  const other = create(finite);
+  other.lastSearchTruncated = true;
+  await other.searchWithMarker('[test-ticket]');
+  assert.equal(other.lastSearchTruncated, false);
+});
+
+test('getLinkedPullRequests keeps the host repository and tries application types in order', async () => {
   const fetchImpl = fakeFetch([
     { match: (u) => u.includes('applicationType=bitbucket'), body: { detail: [] } },
     { match: (u) => u.includes('applicationType=GitHub'), body: devStatusFixture },
   ]);
   const prs = await create(fetchImpl, '/work/wizim-e2e').getLinkedPullRequests({ id: '10001', key: 'WV-90' });
-  assert.deepEqual(prs.map((p) => p.repository), ['wizim-backend-v2', 'wizim-front-v2', 'wizim-api']);
+  assert.deepEqual(prs.map((p) => p.repository), ['wizim-backend-v2', 'wizim-front-v2', 'wizim-api', 'wizim-e2e']);
   assert.deepEqual(
     fetchImpl.calls.map((c) => new URL(c.url).searchParams.get('applicationType')),
     ['bitbucket', 'GitHub'],
@@ -170,6 +184,24 @@ test('getLinkedPullRequests excludes the host repository and tries application t
     fetchImpl.calls[0].url,
     'https://j.test/rest/dev-status/latest/issue/detail?issueId=10001&applicationType=bitbucket&dataType=pullrequest',
   );
+});
+
+test('getLinkedPullRequests skips an application type that fails, null when every type fails', async () => {
+  const oneFails = fakeFetch([
+    { match: (u) => u.includes('applicationType=bitbucket'), status: 500, body: {} },
+    { match: (u) => u.includes('applicationType=GitHub'), body: devStatusFixture },
+  ]);
+  assert.equal((await create(oneFails).getLinkedPullRequests({ id: '1' })).length, 4);
+
+  const someFail = fakeFetch([
+    { match: (u) => u.includes('applicationType=GitHub'), body: { detail: [] } },
+    { match: () => true, status: 403, body: {} },
+  ]);
+  assert.deepEqual(await create(someFail).getLinkedPullRequests({ id: '1' }), []);
+
+  const allFail = fakeFetch([{ match: () => true, status: 401, body: {} }]);
+  assert.equal(await create(allFail).getLinkedPullRequests({ id: '1' }), null);
+  assert.equal(allFail.calls.length, 3);
 });
 
 test('getLinkedPullRequests returns [] when no application type has a pull request', async () => {

@@ -138,6 +138,23 @@ test('parseComment with a corrupt data line falls back to legacy and never throw
   assert.equal(parseComment(`${DATA_MARKER} null`), null);
 });
 
+test('parseComment ignores a data line with a malformed shape and falls back to legacy', () => {
+  const valid = { env: 'testing', verdict: 'OK', cases: [{ id: 'T1', priority: 'P1', title: 't', result: 'OK' }] };
+  assert.equal(parseComment(`${DATA_MARKER} ${JSON.stringify(valid)}`).cases[0].id, 'T1');
+  for (const bad of [
+    { cases: [null] },
+    { ...valid, cases: [null] },
+    { ...valid, cases: [{ id: 1 }] },
+    { ...valid, cases: 'T1' },
+    { ...valid, verdict: 'MAYBE' },
+    { ...valid, env: 3 },
+    { verdict: 'OK', cases: [] },
+  ]) {
+    assert.equal(parseComment(`${DATA_MARKER} ${JSON.stringify(bad)}`), null, JSON.stringify(bad));
+    assert.equal(parseComment(`${legacy}\n${DATA_MARKER} ${JSON.stringify(bad)}`).verdict, 'INCONCLUSIVE', JSON.stringify(bad));
+  }
+});
+
 test('latestReports keeps only the env and sorts newest first', () => {
   const body = (text) => ({ format: 'text', content: text });
   const comments = [

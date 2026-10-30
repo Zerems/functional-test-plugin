@@ -6,6 +6,7 @@
  *   replays, warnings, stop }  (`branch`: the environment's branch, for the rendered delivery lines)
  * `prs` is the tracker's pull requests, or null when they were not read.
  */
+import path from 'node:path';
 import { channelsOf, defaultEnvironmentFor, environmentOf } from './config.mjs';
 import { MARKER, latestReports } from './comment.mjs';
 import { bodyToText, extractCriteria } from './criteria/index.mjs';
@@ -39,7 +40,8 @@ export async function buildDossier({ config, env, input, envForced = null, track
     GIT_MODES.includes(mode) && repositories.length > 0
       ? gitLog({ root, repositoriesDir: effectiveRepositoriesDir(config, env), repositories, branch, key: issue.key })
       : null;
-  const prs = TRACKER_MODES.includes(mode) && tracker.type !== 'file' ? await tracker.getLinkedPullRequests(issue) : null;
+  const linked = TRACKER_MODES.includes(mode) && tracker.type !== 'file' ? await tracker.getLinkedPullRequests(issue) : null;
+  const prs = withoutTestRepository(linked, repositories, root);
 
   const delivery = assessDelivery({ mode, git, tracker: prs, branch, now, recentMinutes });
   const scope = technicalScope({ delivery, repositories, channels: Object.keys(channelsOf(config, envName)), root });
@@ -59,6 +61,16 @@ export async function buildDossier({ config, env, input, envForced = null, track
     warnings: lines,
     stop,
   };
+}
+
+/**
+ * `prs` without the host repository's own, unless the host is a declared delivery repository
+ * ("."): a pure test repository's PRs deliver nothing to test.
+ */
+function withoutTestRepository(prs, repositories, root) {
+  if (!Array.isArray(prs) || !root || repositories.some((repo) => repo.name === '.')) return prs;
+  const host = path.basename(root);
+  return prs.filter((p) => String(p.repository).split('/').pop() !== host);
 }
 
 const timeOf = (date) => Date.parse(date) || 0;
@@ -108,6 +120,13 @@ function deliveryLines(d, t, now) {
   for (const repository of delivery.partialRepos) lines.push(t('dossier.partial', { repository, branch }));
   for (const { repository, lastLocalAt, mergedAt } of delivery.staleRefs) {
     lines.push(t('dossier.staleRef', { repository, localDate: formatDate(lastLocalAt), mergedAt: formatDate(mergedAt) }));
+  }
+  for (const { repository, reason } of delivery.unreadRepositories ?? []) {
+    lines.push(t('dossier.unreadRepository', { repository, branch, reason: t(`delivery.unread.${reason}`) }));
+  }
+  const hints = delivery.branchHints ?? [];
+  if (hints.length > 0) {
+    lines.push(t('dossier.branchHints', { list: hints.map((h) => `${h.repository}: ${h.branch}`).join(', ') }));
   }
   if (scope.length === 1 && scope[0] === 'mobile') lines.push(t('dossier.mobileOnly'));
   return lines;

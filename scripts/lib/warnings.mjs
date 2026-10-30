@@ -26,5 +26,8 @@ export function planWarnings({ issue, envName, defaultEnv, config, delivery, prs
   for (const { repository, lastLocalAt, mergedAt } of delivery.staleRefs ?? []) {
     lines.push(t('warnings.staleRef', { repository, localDate: lastLocalAt, mergedAt }));
   }
+  for (const { repository, reason } of delivery.unreadRepositories ?? []) {
+    lines.push(t('warnings.unreadRepository', { repository, branch, reason: t(`delivery.unread.${reason}`) }));
+  }
   return { stop: false, lines };
 }

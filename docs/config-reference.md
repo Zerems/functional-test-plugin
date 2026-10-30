@@ -93,6 +93,10 @@ continues).
 
 `"."` designates the host repository: it is always considered present, and its refs are read
 as they are. The read-only rule (never fetch, never modify) applies to the other repositories.
+When `"."` is not declared, the host is taken for a pure test repository and its own pull
+requests are left out of the delivery. A repository git could not read (not a clone, or no
+`origin/<branch>`) is listed in the dossier with a warning, and so are the remote branches
+named after the key that are not merged.
 
 ## `browser`
 
