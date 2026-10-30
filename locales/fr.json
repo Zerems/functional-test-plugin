@@ -76,5 +76,14 @@
   "cli.noHost": "aucun projet hôte trouvé : lancer depuis un dossier contenant .claude/functional-test/config.json",
   "cli.missingSecrets": "variables d’environnement manquantes : {variables}",
   "cli.unknownEnv": "environnement inconnu : {env} (attendu : {expected})",
-  "cli.networkError": "erreur réseau : {message}"
+  "cli.networkError": "erreur réseau : {message}",
+  "api.usage": "usage : api.mjs --env <nom> [--channel <nom>] [--auth <nom>] [--header K=V]... [--credentials <fichier>] [--body <json|@fichier>] [--raw] <MÉTHODE> <chemin>",
+  "api.noApiChannel": "aucun canal API dans l’environnement {env} : déclarer un auth sur l’un de ses canaux, ou passer --channel et --auth",
+  "api.severalApiChannels": "plusieurs canaux API dans l’environnement {env} ({channels}) : passer --channel <nom>",
+  "api.unknownChannel": "canal inconnu : {channel} (attendu : {expected})",
+  "api.channelNoAuth": "le canal {channel} ne déclare aucun auth : passer --auth <nom>",
+  "api.unknownAuth": "auth inconnu : {auth} (attendu : {expected})",
+  "api.credentialsUnreadable": "fichier d’identifiants illisible : {file} (attendu : {\"username\",\"password\"})",
+  "api.credentialsIncomplete": "fichier d’identifiants incomplet : {file} (attendu : {\"username\",\"password\"})",
+  "api.bodyUnreadable": "fichier de corps illisible : {file}"
 }

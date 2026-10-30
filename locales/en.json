@@ -76,5 +76,14 @@
   "cli.noHost": "no host project found: run from a folder containing .claude/functional-test/config.json",
   "cli.missingSecrets": "missing environment variables: {variables}",
   "cli.unknownEnv": "unknown environment: {env} (expected: {expected})",
-  "cli.networkError": "network error: {message}"
+  "cli.networkError": "network error: {message}",
+  "api.usage": "usage: api.mjs --env <name> [--channel <name>] [--auth <name>] [--header K=V]... [--credentials <file>] [--body <json|@file>] [--raw] <METHOD> <path>",
+  "api.noApiChannel": "no API channel in environment {env}: declare an auth on one of its channels, or pass --channel and --auth",
+  "api.severalApiChannels": "several API channels in environment {env} ({channels}): pass --channel <name>",
+  "api.unknownChannel": "unknown channel: {channel} (expected: {expected})",
+  "api.channelNoAuth": "channel {channel} declares no auth: pass --auth <name>",
+  "api.unknownAuth": "unknown auth: {auth} (expected: {expected})",
+  "api.credentialsUnreadable": "credentials file unreadable: {file} (expected: {\"username\",\"password\"})",
+  "api.credentialsIncomplete": "credentials file incomplete: {file} (expected: {\"username\",\"password\"})",
+  "api.bodyUnreadable": "body file unreadable: {file}"
 }
