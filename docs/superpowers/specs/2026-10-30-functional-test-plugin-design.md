@@ -50,8 +50,11 @@ Code marketplace, so anyone can install it.
   framework** the host writes its tests in (Playwright, Cypress, Robot Framework, other)
   is also configured: `automation-candidates` proposes, writes and runs tests in that
   framework, through a test MCP server when the host has one.
-- G8. `wizim-e2e` becomes the first consumer and keeps its current behaviour, including
-  French output and its existing `[test-ticket]` comments on Jira.
+- G8. Configured like `wizim-e2e` (French output, Jira, two environments, three
+  channels), the plugin reproduces today's behaviour, including the reading of the
+  existing `[test-ticket]` comments on Jira. **`wizim-e2e` itself is never modified and
+  the plugin is never installed in it**: it stays the read-only reference of the expected
+  behaviour.
 
 ### Non-goals (v1)
 
@@ -474,27 +477,24 @@ rewrites only what changed; it never deletes host content.
 - Test data is prefixed and listed, never deleted.
 - Browser-opening commands run outside the sandbox; the SKILL.md says so.
 
-## 5. Migration of wizim-e2e (validation of the whole)
+## 5. Acceptance: reproducing wizim-e2e's behaviour without touching it
 
-The plugin is done when `wizim-e2e`, configured as a host, runs `/test-ticket` on a real
-ticket and produces the same plan, report and comment as today (in French), and
-`/automation-candidates` lists the same tickets as `/a-automatiser`. Concretely:
+`wizim-e2e` is never modified and the plugin is never installed in it (decision of
+2026-10-30). The acceptance check runs on a **throwaway host folder**, outside any
+repository, configured the way `wizim-e2e` would be:
 
-- `.claude/functional-test/config.json` with `language: fr`, Jira tracker, the two
-  environments and three channels, five repositories, `storage-state` sessions using the
-  existing `auth-setup` / `bo-auth-setup` projects, auth `agency` as `password-login`
-  plus a custom module for the `X-Agency-Id` rule and the disposable worker account flow.
-- `pieges-env.md` → `.claude/functional-test/pitfalls.md`; `docs/qa/automatisation-ecartee.json`
-  → `excluded.json` (or the config points to the existing path).
-- The eight Wizim examples of `techniques-de-test.md` move to the pitfalls file or a
-  host-side examples section; the plugin's rules file keeps neutral examples.
-- `.claude/skills/test-ticket` and `a-automatiser` are removed from `wizim-e2e`;
-  `tnr-demo` and `analyse-run-tnr`, which import the Jira client, either keep a copy or
-  import from the plugin (builder's call, documented).
-- `docs/qa/07-tester-un-ticket.md` is updated to the plugin install flow.
+- `.claude/functional-test/config.json` with `language: fr`, Jira tracker on the Wizim
+  instance, the two environments and three channels, five repositories pointing at the
+  existing local clones (read-only, via `delivery.repositoriesDir`), auth `agency` as
+  `password-login`, sessions in `persistent-profile` mode (no Playwright project needed),
+  a pitfalls file copied from `pieges-env.md`.
+- `.env` filled by the tester with the same accounts as today.
 
-This migration is a separate change in `wizim-e2e`, planned after the plugin's first
-release, but it is the acceptance test of the plugin and must be run before v1 is tagged.
+The plugin is done when, on that host, `/test-ticket` on a real ticket already tested
+with the current skill produces the same plan, report and comment (in French), replay
+reads the existing `[test-ticket]` comments, and `/automation-candidates` lists the same
+tickets as `/a-automatiser`. The `templates/config.example.json` shipped with the plugin
+is that configuration, anonymised.
 
 ## 6. Decisions log
 
@@ -519,6 +519,7 @@ release, but it is the acceptance test of the plugin and must be run before v1 i
 | Browser driver | abstract actions + mapping file per MCP server; Playwright reference, Cypress and Robot Framework community mappings, custom | Playwright MCP hard-coded |
 | Automation framework | configured (`playwright`, `cypress`, `robotframework`, `other`), test MCP server optional, run command fallback | Playwright-only test writing |
 | Licence | MIT | — |
+| wizim-e2e | never modified, plugin never installed there; acceptance on a throwaway host configured like it | migrating wizim-e2e to the plugin |
 
 ## 7. Left to the builder
 

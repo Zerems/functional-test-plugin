@@ -12,7 +12,7 @@
 
 **Reference implementation (read-only):** `/Users/Remy/Documents/Wizim/wizim-e2e/.claude/skills/test-ticket/` and `a-automatiser/`. Several modules are ports of its `scripts/lib/*.mjs`; the plan says "port of X" when so. Never modify that repository.
 
-**Out of scope of this plan:** the migration of `wizim-e2e` to the plugin (spec §5), planned separately once the plugin is tagged `0.1.0`.
+**Never in scope:** `wizim-e2e` is not modified and the plugin is not installed in it (spec §5). The acceptance check of spec §5 is a manual run by the author on a throwaway host folder after `0.1.0`, outside this plan.
 
 ## Global Constraints
 
@@ -469,12 +469,12 @@ Tracker credential variable names by type: jira → `JIRA_EMAIL`, `JIRA_API_TOKE
 ### Task 17: Documentation and release 0.1.0
 
 **Files:**
-- Create: `README.md`, `docs/config-reference.md`, `docs/adapters.md`, `docs/migration-from-wizim-e2e.md`
+- Create: `README.md`, `docs/config-reference.md`, `docs/adapters.md`, `docs/acceptance-check.md`
 - Modify: `CHANGELOG.md`
 
 - [ ] **Step 1: `README.md`** — what it does (one paragraph), ten-minute quickstart (`claude plugin marketplace add Zerems/functional-test-plugin`, `claude plugin install functional-test@zerems-plugins`, `/functional-test:setup`, fill `.env`, `/test-ticket <key>`), supported trackers / drivers / frameworks table with status (reference, community, planned), security rules including the suggested host `settings.json` permissions block (`deny`: `Read(./.env)`, `Read(./.auth/**)`, `Read(./.mcp.json)`, `Edit(./.env)`, `Edit(./.auth/**)`; `allow`: `Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/*)`), licence.
 - [ ] **Step 2: `docs/config-reference.md`** — every field of §4.2 with type, default, validation rule (generated from Task 2's rules, kept in sync by hand).
 - [ ] **Step 3: `docs/adapters.md`** — tracker and auth interfaces (Tasks 5, 9) with a minimal custom module example each; how to add a built-in adapter (file, registration, tests, docs).
-- [ ] **Step 4: `docs/migration-from-wizim-e2e.md`** — spec §5 as a checklist for the follow-up plan.
+- [ ] **Step 4: `docs/acceptance-check.md`** — spec §5 as a checklist: build a throwaway host folder from `templates/config.example.json`, fill `.env`, run `/test-ticket` on an already-tested ticket and compare plan, report and comment with the reference; never install in the reference repository.
 - [ ] **Step 5: `CHANGELOG.md` 0.1.0** entry; `npm test` green; `claude plugin validate .` ok.
-- [ ] **Step 6: Commit and tag** — `git commit -m "docs: README, config reference, adapters guide, migration notes" && git tag v0.1.0`.
+- [ ] **Step 6: Commit and tag** — `git commit -m "docs: README, config reference, adapters guide, acceptance check" && git tag v0.1.0`.
