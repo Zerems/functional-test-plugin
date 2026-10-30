@@ -12,35 +12,16 @@ import { findHostRoot } from './lib/host.mjs';
 import { loadEnv } from './lib/env.mjs';
 import { ConfigError, loadConfig } from './lib/config.mjs';
 import { translator } from './lib/i18n.mjs';
-import { MissingSecretError, TrackerError, createTracker } from './lib/trackers/index.mjs';
+import { UsageError, parseFlags, reportError } from './lib/cli.mjs';
+import { createTracker } from './lib/trackers/index.mjs';
 import { createFileTracker } from './lib/trackers/file.mjs';
 import { buildDossier, latestReplayText, renderDossier } from './lib/dossier.mjs';
 
-const NETWORK_CODES = new Set(['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'ETIMEDOUT', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT']);
-const isNetworkError = (error) =>
-  error?.name === 'AbortError' ||
-  error?.name === 'TimeoutError' ||
-  (error instanceof TypeError && /fetch failed/i.test(error.message)) ||
-  NETWORK_CODES.has(error?.cause?.code ?? error?.code);
-
-class UsageError extends Error {}
-
 /** `{ input, envForced, json, replayText }` or throws UsageError. */
 function parseArgs(argv, usage) {
-  const options = { input: null, envForced: null, json: false, replayText: false };
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--json') options.json = true;
-    else if (arg === '--replay-text') options.replayText = true;
-    else if (arg === '--env') {
-      const value = argv[++i];
-      if (!value || value.startsWith('--')) throw new UsageError(usage);
-      options.envForced = value;
-    } else if (arg.startsWith('--') || options.input !== null) throw new UsageError(usage);
-    else options.input = arg;
-  }
-  if (options.input === null || (options.json && options.replayText)) throw new UsageError(usage);
-  return options;
+  const { flags, positionals } = parseFlags(argv, { env: 'string', json: 'boolean', 'replay-text': 'boolean' }, usage);
+  if (positionals.length !== 1 || (flags.json && flags['replay-text'])) throw new UsageError(usage);
+  return { input: positionals[0], envForced: flags.env, json: flags.json, replayText: flags['replay-text'] };
 }
 
 const isExistingFile = (root, input) => {
@@ -50,29 +31,6 @@ const isExistingFile = (root, input) => {
     return false;
   }
 };
-
-/** Prints the error on stderr and returns the exit code. */
-function report(error, t, key) {
-  const say = (message) => process.stderr.write(`${message}\n`);
-  if (error instanceof MissingSecretError) {
-    say(t('ticket.missingSecrets', { variables: error.variables.join(', ') }));
-    return 3;
-  }
-  if (error instanceof TrackerError) {
-    if (error.status === 404) {
-      say(t('ticket.notFound', { key }));
-      return 2;
-    }
-    say(t('ticket.trackerError', { message: error.message }));
-    return 4;
-  }
-  if (isNetworkError(error)) {
-    say(t('ticket.trackerError', { message: error.message }));
-    return 4;
-  }
-  say(error.message);
-  return 1;
-}
 
 async function main(argv) {
   const en = translator('en');
@@ -86,7 +44,7 @@ async function main(argv) {
 
   const root = findHostRoot();
   if (!root) {
-    process.stderr.write(`${en('ticket.noHost')}\n`);
+    process.stderr.write(`${en('cli.noHost')}\n`);
     return 2;
   }
   let config;
@@ -104,7 +62,7 @@ async function main(argv) {
 
   const { input, envForced } = options;
   if (envForced && !config.environments[envForced]) {
-    process.stderr.write(`${t('ticket.unknownEnv', { env: envForced, expected: Object.keys(config.environments).join(', ') })}\n`);
+    process.stderr.write(`${t('cli.unknownEnv', { env: envForced, expected: Object.keys(config.environments).join(', ') })}\n`);
     return 2;
   }
 
@@ -134,7 +92,7 @@ async function main(argv) {
       process.stderr.write(`${error.message}\n`);
       return 2;
     }
-    return report(error, t, key);
+    return reportError(error, t, { notFound: t('ticket.notFound', { key }), networkKey: 'cli.trackerError' });
   }
 }
 

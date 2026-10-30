@@ -72,8 +72,9 @@
   "dossier.replayTextHint": "Texte brut : ticket.mjs {key} --env {env} --replay-text > ancien.txt",
   "ticket.usage": "usage : ticket.mjs <clé|url|chemin> [--env <nom>] [--json | --replay-text]",
   "ticket.notFound": "ticket introuvable : {key}",
-  "ticket.trackerError": "tracker en erreur : {message}",
-  "ticket.noHost": "aucun projet hôte trouvé : lancer depuis un dossier contenant .claude/functional-test/config.json",
-  "ticket.missingSecrets": "variables d’environnement manquantes : {variables}",
-  "ticket.unknownEnv": "environnement inconnu : {env} (attendu : {expected})"
+  "cli.trackerError": "tracker en erreur : {message}",
+  "cli.noHost": "aucun projet hôte trouvé : lancer depuis un dossier contenant .claude/functional-test/config.json",
+  "cli.missingSecrets": "variables d’environnement manquantes : {variables}",
+  "cli.unknownEnv": "environnement inconnu : {env} (attendu : {expected})",
+  "cli.networkError": "erreur réseau : {message}"
 }
