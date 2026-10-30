@@ -63,8 +63,7 @@ async function main(argv) {
   const loadedKeys = loadEnv(root);
   const t = translator(config.language);
   // A ticket or a comment may quote a secret of .env: never print one.
-  const loadedValues = loadedKeys.map((name) => process.env[name]);
-  const redact = (text) => redactValues(text, [...loadedValues, ...loadedValues.map((v) => JSON.stringify(v).slice(1, -1))]);
+  const redact = (text) => redactValues(text, loadedKeys.map((name) => process.env[name]));
 
   const { input, envForced } = options;
   if (envForced && !config.environments[envForced]) {

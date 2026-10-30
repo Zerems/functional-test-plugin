@@ -24,6 +24,19 @@ test('maskSecrets masks nested token, password, authorization and cookie keys, l
   assert.equal(input.accessToken, 'abc', 'input is not mutated');
 });
 
+test('maskSecrets masks jwt, session, sid, bearer, credential and private key fields, not words containing sid', () => {
+  const out = maskSecrets({
+    data: { jwt: 'a', sessionId: 'b', sid: 'c', connect_sid: 'd', userSid: 'e', bearer: 'f', credentials: { u: 'g' }, privateKey: 'h', private_key: 'i' },
+    president: 'kept',
+    residence: 'kept',
+  });
+  assert.deepEqual(out, {
+    data: { jwt: '***', sessionId: '***', sid: '***', connect_sid: '***', userSid: '***', bearer: '***', credentials: '***', privateKey: '***', private_key: '***' },
+    president: 'kept',
+    residence: 'kept',
+  });
+});
+
 test('maskSecrets passes primitives and null through', () => {
   assert.equal(maskSecrets('text'), 'text');
   assert.equal(maskSecrets(null), null);
@@ -38,4 +51,9 @@ test('redactValues replaces every occurrence of each value, longest first', () =
 test('redactValues ignores empty, short and non-string values', () => {
   assert.equal(redactValues('abc abc', ['', 'abc', undefined, null, 42]), 'abc abc');
   assert.equal(redactValues('nothing here', ['secret-value']), 'nothing here');
+});
+
+test('redactValues also catches a value in its JSON-escaped form', () => {
+  const value = 'pa"ss\\word';
+  assert.equal(redactValues(JSON.stringify({ note: value }), [value]), '{"note":"***"}');
 });

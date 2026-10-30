@@ -49,6 +49,10 @@ async function stubApi() {
       }
       if (!req.headers.authorization?.startsWith('Bearer jwt-')) return send(401, {});
       if (req.url === '/v1/me') return send(200, { id: 'u1', name: 'Collab', apiToken: 'leaky-token', nested: { password: 'leaky-pw' } });
+      if (req.url === '/v1/session') {
+        const token = req.headers.authorization.slice('Bearer '.length);
+        return send(200, { data: { jwt: token, echo: `seen ${token}`, note: `jira ${process.env.STUB_ECHO ?? ''}` } });
+      }
       if (req.url === '/v1/boom') return send(503, 'upstream down');
       if (req.url === '/v1/text') return send(200, `debug: ${req.headers.authorization} user=collab pass=correct-password ok`);
       if (req.url === '/v1/missing') return send(404, { message: 'not here' });
@@ -135,6 +139,27 @@ test('api.mjs redacts the token and the credentials from a plain-text body, with
     assert.match(explicit.stdout, /debug: Bearer \*\*\* user=collab pass=\*\*\* ok/);
     assert.ok(!explicit.stdout.includes('jwt-worker') && !explicit.stdout.includes('correct-password'));
   } finally {
+    host.cleanup();
+    await api.close();
+  }
+});
+
+test('api.mjs masks secrets under secret-looking keys and redacts known secret values under any key', async () => {
+  const api = await stubApi();
+  const host = makeHost(api.url);
+  process.env.STUB_ECHO = 'jira-api-token-value';
+  try {
+    const env = { ...secrets, JIRA_EMAIL: 'qa@example.test', JIRA_API_TOKEN: 'jira-api-token-value' };
+    for (const extra of [[], ['--raw']]) {
+      const { code, stdout, stderr } = await run(host.dir, ['--env', 'testing', ...extra, 'GET', '/v1/session'], env);
+      assert.equal(code, 0, stderr);
+      assert.match(stdout, /"jwt": ?"\*\*\*"/);
+      assert.match(stdout, /"echo": ?"seen \*\*\*"/);
+      assert.match(stdout, /"note": ?"jira \*\*\*"/);
+      assert.ok(!stdout.includes('jwt-collab') && !stdout.includes('jira-api-token-value'), stdout);
+    }
+  } finally {
+    delete process.env.STUB_ECHO;
     host.cleanup();
     await api.close();
   }
