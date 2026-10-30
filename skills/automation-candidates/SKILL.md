@@ -20,7 +20,9 @@ Framework notes and driver mappings live in the `test-ticket` skill:
 - **Never write to the tracker**: the comment stays the developer's. No status change,
   no comment, no label.
 - Application repositories: read-only, never `git fetch`, never a modification. Tests are
-  written in the host project only.
+  written in the host project only; in a single-repository setup the host repository
+  (`"."`) is the only writable one: the branch and the spec go there, the other configured
+  repositories stay read-only.
 - **No secret** in the chat: never read `.env`, `.auth/**` or `.mcp.json`, never print a
   token. **Never type a credential in a browser**: an account that is not logged in → ask
   the human to log in in that session.
@@ -68,7 +70,9 @@ Three answers from QA, handled as they are:
    win over everything else), then the framework notes
    `${CLAUDE_PLUGIN_ROOT}/skills/test-ticket/references/frameworks/<automation.framework>.md`.
    `framework: other` → follow `howToWriteTests` only and say that no framework notes exist.
-4. Explore the behaviour with the browser driver, exactly as `test-ticket` does: the
+4. Target environment, for the exploration and the run: the one QA names, else
+   `defaultEnvironment.fallback`, else the first environment of the config.
+   Explore the behaviour on it with the browser driver, exactly as `test-ticket` does: the
    mapping of `browser.driver` (`references/browser-drivers/<driver>.md`, or the host file
    `browser.driverMapping` for `custom`), the session of the channel
    (`node ${CLAUDE_PLUGIN_ROOT}/scripts/session.mjs --env <env> --session <session>`, then

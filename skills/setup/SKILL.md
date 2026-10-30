@@ -18,6 +18,7 @@ to enable). `<scratchpad>` is the session's scratchpad directory.
   `setup-write.mjs` merges `.mcp.json` itself.
 - **Never overwrite host content**: only `setup-write.mjs` writes, and it keeps an existing
   pitfalls file, exclusions file and `.mcp.json` entries; it never deletes anything.
+  `config.json` is rewritten from `answers.json`: always seed it from the existing config.
 - Defaults are shown with every question; an empty answer takes the default.
 
 ## 0. Detect
@@ -86,7 +87,8 @@ Only when a channel declares a `session`.
 - `browser.engine`: `chromium` (default) | `msedge` | `chrome` | `firefox` | `webkit`;
   `browser.viewport`: default `1440x900`.
 - For each session name: `mode` and `mcpServer` (default `playwright` for the first
-  session, `playwright-<session>` for the others).
+  session and `playwright-<session>` for the others with `playwright-mcp`; `browser` and
+  `browser-<session>` with the other drivers).
   - `persistent-profile` (default for Playwright): a browser profile under
     `.auth/profiles/<session>/`; the human logs in once in it.
   - `storage-state` (Playwright only): `file` (e.g. `.auth/<session>.json`) and the
@@ -130,15 +132,20 @@ test domain or a disposable-mail service).
 ## 9. Write
 
 Write `<scratchpad>/answers.json` in the shape of
-`${CLAUDE_PLUGIN_ROOT}/templates/config.example.json`, starting with `"version": 1`, with
-only what was answered (the script fills the defaults). Then, from the host root:
+`${CLAUDE_PLUGIN_ROOT}/templates/config.example.json`, with `"version": 1`. A config was
+detected in step 0 → **start from a copy of the existing `config.json`** and change only
+the fields the user answered, so that fields outside the interview (a custom
+`pitfallsFile`, keys added by hand) survive. Otherwise, write only what was answered (the
+script fills the defaults). Then, from the host root:
 
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/scripts/setup-write.mjs <scratchpad>/answers.json
 ```
 
-Exit 2: the validation errors are printed as `<json.path>: <message>`; fix the answers
-(ask again only what is wrong), rerun. Exit 1: files written, preflight blocked (expected
+Exit 2, nothing written: validation errors printed as `<json.path>: <message>` → fix the
+answers (ask again only what is wrong), rerun; answers file unreadable → rewrite it, rerun;
+`.mcp.json` is not valid JSON → the user repairs `.mcp.json` themselves (never read it),
+then rerun. Exit 1: files written, preflight blocked (expected
 while `.env` is not filled). Exit 0: files written, preflight `--- ready`.
 
 ## 10. Report
@@ -158,7 +165,8 @@ In `config.language`:
    `.mcp.json` (`/mcp`). On a re-run, an existing entry is never replaced: if a session
    changed mode or path, the user edits that entry themselves (the preflight shows it).
 5. The preflight KO and warning lines as printed, and how to rerun it once `.env` is filled:
-   `node ${CLAUDE_PLUGIN_ROOT}/scripts/preflight.mjs --env <defaultEnvironment.fallback>`.
+   `node ${CLAUDE_PLUGIN_ROOT}/scripts/preflight.mjs --env <env>`, `<env>` being
+   `defaultEnvironment.fallback`, or the first environment when none was set.
 6. Suggested host `.claude/settings.json` permissions (documented, not written):
    `"deny": ["Read(.env)", "Edit(.env)", "Read(.auth/**)", "Edit(.auth/**)", "Read(.mcp.json)", "Edit(.mcp.json)"]`
    and `"allow": ["Bash(node <plugin root>/scripts/*)"]`, `<plugin root>` being the value
