@@ -2,9 +2,11 @@
  * Delivery assessment: has the ticket's work reached the environment's branch?
  *
  * Delivery = { state: 'effective'|'recent'|'absent'|'unknown', lastAt: ISO|null,
- *   evidence: string[], partialRepos: string[], staleRefs: [{ repository, lastLocalAt, mergedAt }],
- *   repositoriesTouched: string[], reason: string|null }
- * `reason` explains an `unknown` state. Git is only ever read, never fetched: the dev fetches.
+ *   evidence: [{ kind: 'commit'|'pr', repository, sha?, date: ISO|null, title }],
+ *   partialRepos: string[], staleRefs: [{ repository, lastLocalAt, mergedAt }],
+ *   repositoriesTouched: string[], reason: 'mode-none'|'tracker-unknown'|'no-ref-readable'|null }
+ * `reason` (a code, localised by the caller) explains an `unknown` state; evidence carries no prose.
+ * Git is only ever read, never fetched: the dev fetches.
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -23,23 +25,35 @@ export function repositoryDir(root, repositoriesDir, name) {
 const escapeEre = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const toIso = (date) => new Date(date).toISOString();
 const lastSegment = (name) => String(name).split('/').pop();
-const sameRepository = (a, b) => a === b || lastSegment(a) === lastSegment(b);
+
+/** Repository name as the tracker knows it: configured `slug`, else the host directory name for ".", else the name. */
+export function slugOf(repository, root) {
+  if (repository.slug) return repository.slug;
+  return repository.name === '.' && root ? path.basename(root) : repository.name;
+}
+
+/** Does a repository named `name` by git (config name) or by the tracker (PR repository) designate `repository`? */
+const designates = (repository, name, root) =>
+  name === repository.name || lastSegment(name) === lastSegment(slugOf(repository, root));
 
 /**
  * Commits citing `key` on `origin/<branch>` of each configured repository, newest first.
  * A repository that is not a clone goes to `missingRepo`, one without that remote branch to
  * `missingRef`; neither is an error. `checked` lists the repositories whose ref was read and
- * `lastLocalCommitAt` their newest commit on it (to spot refs that need a `git fetch`).
+ * `lastLocalCommitAt` their newest commit on it (to spot refs that need a `git fetch`); `slugs`
+ * maps each configured name to the name the tracker uses for it.
  * `branchHints` are remote branches named after the key, for repositories with no hit.
  */
 export function gitLogDelivery({ root, repositoriesDir, repositories, branch, key, execFile = execFileSync }) {
-  const result = { hits: [], missingRef: [], missingRepo: [], branchHints: [], checked: [], lastLocalCommitAt: {} };
+  const result = { hits: [], missingRef: [], missingRepo: [], branchHints: [], checked: [], lastLocalCommitAt: {}, slugs: {} };
   const run = (dir, args) => execFile('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const ref = `origin/${branch}`;
   // The key must stand alone: WV-12 does not match WV-123.
   const pattern = `(^|[^A-Za-z0-9])${escapeEre(key)}([^0-9]|$)`;
 
-  for (const { name, channel } of repositories) {
+  for (const repository of repositories) {
+    const { name, channel } = repository;
+    result.slugs[name] = slugOf(repository, root);
     const dir = repositoryDir(root, repositoriesDir, name);
     if (!fs.existsSync(path.join(dir, '.git'))) {
       result.missingRepo.push(name);
@@ -95,7 +109,7 @@ function stateByAge(dates, undated, now, recentMinutes) {
   return ageMinutes < recentMinutes ? 'recent' : 'effective';
 }
 
-function staleRefsOf(merged, lastLocalCommitAt) {
+function staleRefsOf(merged, lastLocalCommitAt, slugs) {
   const mergedAtByRepo = new Map();
   for (const p of merged) {
     if (!p.mergedAt) continue;
@@ -104,7 +118,9 @@ function staleRefsOf(merged, lastLocalCommitAt) {
   }
   const stale = [];
   for (const [repository, mergedAt] of mergedAtByRepo) {
-    const local = Object.keys(lastLocalCommitAt).find((name) => sameRepository(name, repository));
+    const local = Object.keys(lastLocalCommitAt).find(
+      (name) => name === repository || lastSegment(slugs[name] ?? name) === lastSegment(repository),
+    );
     if (local !== undefined && lastLocalCommitAt[local] < mergedAt) {
       stale.push({ repository, lastLocalAt: lastLocalCommitAt[local], mergedAt });
     }
@@ -119,46 +135,42 @@ function staleRefsOf(merged, lastLocalCommitAt) {
  */
 export function assessDelivery({ mode, git, tracker, branch, now = new Date(), recentMinutes }) {
   const delivery = { state: 'unknown', lastAt: null, evidence: [], partialRepos: [], staleRefs: [], repositoriesTouched: [], reason: null };
-  if (mode === 'none') return { ...delivery, reason: 'mode none' };
+  if (mode === 'none') return { ...delivery, reason: 'mode-none' };
 
   const useGit = mode === 'git-log' || mode === 'both';
   const useTracker = mode === 'tracker' || mode === 'both';
   const gitReadable = useGit && git !== null && (git.hits.length > 0 || git.checked.length > 0);
   const trackerReadable = useTracker && Array.isArray(tracker);
   if (!gitReadable && !trackerReadable) {
-    const reasons = [];
-    if (useGit) reasons.push(`no origin/${branch} ref could be read in the configured repositories`);
-    if (useTracker) reasons.push('tracker cannot know pull requests');
-    return { ...delivery, reason: reasons.join(' and ') };
+    return { ...delivery, reason: useTracker ? 'tracker-unknown' : 'no-ref-readable' };
   }
 
   const hits = gitReadable ? git.hits : [];
   const tracked = trackerReadable ? trackerDelivery(tracker, branch) : { merged: [], partialRepos: [] };
   delivery.evidence = [
-    ...hits.map((h) => `${h.repository}: ${h.commit.slice(0, 7)} ${h.date} ${h.subject}`),
-    ...tracked.merged.map(
-      (p) => `PR « ${p.title} » (${p.repository}) merged into ${branch}${p.mergedAt ? ` on ${toIso(p.mergedAt)}` : ''}`,
-    ),
+    ...hits.map((h) => ({ kind: 'commit', repository: h.repository, sha: h.commit, date: h.date, title: h.subject })),
+    ...tracked.merged.map((p) => ({ kind: 'pr', repository: p.repository, date: p.mergedAt ? toIso(p.mergedAt) : null, title: p.title })),
   ];
   delivery.repositoriesTouched = [...new Set([...hits.map((h) => h.repository), ...tracked.merged.map((p) => p.repository)])];
   delivery.partialRepos = tracked.partialRepos;
-  if (mode === 'both' && gitReadable) delivery.staleRefs = staleRefsOf(tracked.merged, git.lastLocalCommitAt ?? {});
+  if (mode === 'both' && gitReadable) delivery.staleRefs = staleRefsOf(tracked.merged, git.lastLocalCommitAt ?? {}, git.slugs ?? {});
 
-  // Git, being the branch itself, speaks first; the tracker answers when git found nothing.
-  const source = hits.length > 0 ? { dates: hits.map((h) => h.date), undated: false } : tracked.merged.length > 0
-    ? { dates: tracked.merged.filter((p) => p.mergedAt).map((p) => toIso(p.mergedAt)), undated: tracked.merged.some((p) => !p.mergedAt) }
-    : null;
-  if (source === null) return { ...delivery, state: 'absent' };
-  return { ...delivery, state: stateByAge(source.dates, source.undated, now, recentMinutes), lastAt: newest(source.dates) };
+  // The delivery is as recent as its newest trace, whether a commit on the branch or a merged PR.
+  if (delivery.evidence.length === 0) return { ...delivery, state: 'absent' };
+  const dates = delivery.evidence.map((e) => e.date).filter(Boolean);
+  const undated = dates.length < delivery.evidence.length;
+  return { ...delivery, state: stateByAge(dates, undated, now, recentMinutes), lastAt: newest(dates) };
 }
 
 /**
  * Channels the delivery touches: those of the repositories it reached; every channel of the
- * environment when the delivery is unknown. Repository names match on their last path segment.
+ * environment when the delivery is unknown, or when a touched repository matches no configured
+ * entry (conservative). `root` gives the host repository "." its default tracker name.
  */
-export function technicalScope({ delivery, repositories, channels }) {
+export function technicalScope({ delivery, repositories, channels, root }) {
   if (delivery.state === 'unknown') return [...channels];
   const touched = delivery.repositoriesTouched ?? [];
-  const scope = repositories.filter((repo) => touched.some((name) => sameRepository(name, repo.name))).map((repo) => repo.channel);
-  return [...new Set(scope)];
+  if (touched.some((name) => !repositories.some((repo) => designates(repo, name, root)))) return [...channels];
+  const reached = repositories.filter((repo) => touched.some((name) => designates(repo, name, root)));
+  return [...new Set(reached.map((repo) => repo.channel))];
 }

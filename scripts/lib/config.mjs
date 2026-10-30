@@ -136,6 +136,7 @@ const checks = [
     repos.forEach((repo, i) => {
       if (!isFilled(repo?.name)) err(`delivery.repositories[${i}].name`, 'is required');
       if (!isFilled(repo?.channel)) err(`delivery.repositories[${i}].channel`, 'is required');
+      if (repo?.slug !== undefined && !isFilled(repo.slug)) err(`delivery.repositories[${i}].slug`, 'must be a non-empty string');
     });
   },
 

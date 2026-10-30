@@ -17,7 +17,7 @@ const run = (over = {}) =>
   planWarnings({ issue: { status: 'Test' }, envName: 'testing', defaultEnv: 'testing', config, delivery: effective, prs: [], t, ...over });
 
 test('planWarnings stops on doNotTest status', () => {
-  const result = run({ issue: { status: 'Not a bug' }, envName: 'demo', delivery: { ...effective, state: 'unknown', reason: 'mode none' } });
+  const result = run({ issue: { status: 'Not a bug' }, envName: 'demo', delivery: { ...effective, state: 'unknown', reason: 'mode-none' } });
   assert.equal(result.stop, true);
   assert.deepEqual(result.lines, [t('warnings.doNotTest', { status: 'Not a bug' })]);
 });
@@ -27,9 +27,13 @@ test('planWarnings is silent for a regular delivery', () => {
 });
 
 test('planWarnings warns on unknown delivery', () => {
-  const result = run({ delivery: { ...effective, state: 'unknown', reason: 'mode none' } });
+  const result = run({ delivery: { ...effective, state: 'unknown', reason: 'mode-none' } });
   assert.equal(result.stop, false);
-  assert.deepEqual(result.lines, ['Delivery not verified: mode none.']);
+  assert.deepEqual(result.lines, ['Delivery not verified: delivery check disabled (mode none).']);
+  const noRef = run({ delivery: { ...effective, state: 'unknown', reason: 'no-ref-readable' } });
+  assert.deepEqual(noRef.lines, ['Delivery not verified: no origin/testing ref could be read in any repository.']);
+  const fr = run({ t: translator('fr'), delivery: { ...effective, state: 'unknown', reason: 'tracker-unknown' } });
+  assert.deepEqual(fr.lines, ['Livraison non vérifiée : le tracker ne peut pas connaître les PR.']);
 });
 
 test('planWarnings warns on unexpected status and forced environment', () => {

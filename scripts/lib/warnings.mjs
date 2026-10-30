@@ -22,7 +22,7 @@ export function planWarnings({ issue, envName, defaultEnv, config, delivery, prs
     lines.push(t('warnings.otherTargets', { targets: otherTargets.join(', '), branch }));
   }
   for (const repository of delivery.partialRepos ?? []) lines.push(t('warnings.partial', { repository, branch }));
-  if (delivery.state === 'unknown') lines.push(t('warnings.deliveryUnknown', { reason: delivery.reason ?? 'unknown' }));
+  if (delivery.state === 'unknown') lines.push(t('warnings.deliveryUnknown', { reason: t(`delivery.reason.${delivery.reason}`, { branch }) }));
   for (const { repository, lastLocalAt, mergedAt } of delivery.staleRefs ?? []) {
     lines.push(t('warnings.staleRef', { repository, localDate: lastLocalAt, mergedAt }));
   }

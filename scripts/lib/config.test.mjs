@@ -98,6 +98,14 @@ test('validateConfig reports git-log mode without repositories', () => {
   assert.ok(errors.some((e) => e.startsWith('delivery.repositories')), errors.join('\n'));
 });
 
+test('validateConfig accepts an optional repository slug', () => {
+  const config = validExample();
+  config.delivery.repositories[0].slug = 'acme/webapp';
+  assert.deepEqual(validateConfig(config), []);
+  config.delivery.repositories[0].slug = '';
+  assert.ok(validateConfig(config).some((e) => e.startsWith('delivery.repositories[0].slug')));
+});
+
 test('validateConfig reports custom driver without driverMapping', () => {
   const config = validExample();
   config.browser.driver = 'custom';

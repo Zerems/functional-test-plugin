@@ -29,5 +29,8 @@
   "warnings.otherTargets": "The merged pull requests target {targets}, not {branch}: check the chosen environment.",
   "warnings.partial": "Partial delivery: {repository} has merged pull requests but none into {branch} - check git log origin/{branch} of that repository before concluding.",
   "warnings.deliveryUnknown": "Delivery not verified: {reason}.",
-  "warnings.staleRef": "Local refs of {repository} are behind (latest local commit {localDate}, merge {mergedAt}): run git fetch before concluding."
+  "warnings.staleRef": "Local refs of {repository} are behind (latest local commit {localDate}, merge {mergedAt}): run git fetch before concluding.",
+  "delivery.reason.mode-none": "delivery check disabled (mode none)",
+  "delivery.reason.tracker-unknown": "the tracker cannot know pull requests",
+  "delivery.reason.no-ref-readable": "no origin/{branch} ref could be read in any repository"
 }

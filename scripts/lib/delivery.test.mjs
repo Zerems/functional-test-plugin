@@ -81,15 +81,15 @@ test('gitLogDelivery finds a commit citing the key on origin/<branch>', () => {
 test('gitLogDelivery does not treat key characters as a pattern', () => {
   const { parent, repos, cleanup } = reposParent('api');
   try {
-    const sha = repos.api.commit('fixes acme/web#7', { date: '2026-10-30T10:00:00Z' });
-    repos.api.commit('fixes acmeXwebY7', { date: '2026-10-30T10:30:00Z' });
+    repos.api.commit('fixes aXb', { date: '2026-10-30T09:00:00Z' });
+    const sha = repos.api.commit('fixes a.b', { date: '2026-10-30T10:00:00Z' });
     repos.api.setRemoteRef('testing', repos.api.commit('noop', { date: '2026-10-30T11:00:00Z' }));
     const { hits } = gitLogDelivery({
       root: '/unused',
       repositoriesDir: parent,
       repositories: [{ name: 'api', channel: 'api' }],
       branch: 'testing',
-      key: 'acme/web#7',
+      key: 'a.b',
     });
     assert.deepEqual(hits.map((h) => h.commit), [sha]);
   } finally {
@@ -231,7 +231,7 @@ test('assessDelivery git-log: recent under recentMinutes, effective after', () =
   assert.equal(recent.state, 'recent');
   assert.equal(recent.lastAt, minutesAgo(10));
   assert.deepEqual(recent.repositoriesTouched, ['api']);
-  assert.match(recent.evidence[0], /^api: abcdef1 .+ WV-1 x$/);
+  assert.deepEqual(recent.evidence, [{ kind: 'commit', repository: 'api', sha: 'abcdef1234567', date: minutesAgo(10), title: 'WV-1 x' }]);
   const effective = assessDelivery({ mode: 'git-log', git: git(minutesAgo(61)), tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(effective.state, 'effective');
 });
@@ -250,16 +250,16 @@ test('assessDelivery is unknown when no repository could be read in git-log mode
   const git = { hits: [], missingRef: ['api'], missingRepo: ['front'], branchHints: [], checked: [], lastLocalCommitAt: {} };
   const result = assessDelivery({ mode: 'git-log', git, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(result.state, 'unknown');
-  assert.match(result.reason, /origin\/testing/);
+  assert.equal(result.reason, 'no-ref-readable');
 });
 
 test('assessDelivery unknown for mode none and for tracker mode with null prs', () => {
   const none = assessDelivery({ mode: 'none', git: null, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(none.state, 'unknown');
-  assert.equal(none.reason, 'mode none');
+  assert.equal(none.reason, 'mode-none');
   const tracker = assessDelivery({ mode: 'tracker', git: null, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(tracker.state, 'unknown');
-  assert.equal(tracker.reason, 'tracker cannot know pull requests');
+  assert.equal(tracker.reason, 'tracker-unknown');
   assert.deepEqual(tracker.evidence, []);
   assert.deepEqual(tracker.staleRefs, []);
 });
@@ -270,7 +270,8 @@ test('assessDelivery tracker mode dates the delivery by the newest merge into th
   assert.equal(result.state, 'recent');
   assert.equal(result.lastAt, minutesAgo(5));
   assert.deepEqual(result.repositoriesTouched, ['api', 'front']);
-  assert.match(result.evidence[0], /^PR « Fix things » \(api\) merged into testing on /);
+  assert.deepEqual(result.evidence[0], { kind: 'pr', repository: 'api', date: minutesAgo(500), title: 'Fix things' });
+  assert.deepEqual(result.evidence[1], { kind: 'pr', repository: 'front', date: minutesAgo(5), title: 'Fix things' });
   assert.equal(assessDelivery({ mode: 'tracker', git: null, tracker: [pr({ mergedAt: null })], branch: 'testing', now: NOW, recentMinutes: 60 }).state, 'recent');
 });
 
@@ -299,12 +300,16 @@ test('assessDelivery both prefers git hits, falls back to the tracker, is unknow
   const hit = { repository: 'api', channel: 'api', commit: 'abcdef1234567', date: minutesAgo(400), subject: 'WV-1' };
   const git = { hits: [hit], missingRef: [], missingRepo: [], branchHints: [], checked: ['api'], lastLocalCommitAt: { api: minutesAgo(400) } };
   const both = assessDelivery({ mode: 'both', git, tracker: [pr({ mergedAt: minutesAgo(5) })], branch: 'testing', now: NOW, recentMinutes: 60 });
-  assert.equal(both.state, 'effective');
+  assert.equal(both.state, 'recent');
+  assert.equal(both.lastAt, minutesAgo(5));
   assert.equal(both.evidence.length, 2);
   const noGit = assessDelivery({ mode: 'both', git: null, tracker: [pr({ mergedAt: minutesAgo(5) })], branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(noGit.state, 'recent');
   const none = assessDelivery({ mode: 'both', git: null, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(none.state, 'unknown');
+  const olderPr = assessDelivery({ mode: 'both', git, tracker: [pr({ mergedAt: minutesAgo(900) })], branch: 'testing', now: NOW, recentMinutes: 60 });
+  assert.equal(olderPr.state, 'effective');
+  assert.equal(olderPr.lastAt, minutesAgo(400));
   const gitOnly = assessDelivery({ mode: 'both', git, tracker: null, branch: 'testing', now: NOW, recentMinutes: 60 });
   assert.equal(gitOnly.state, 'effective');
   const empty = { ...git, hits: [] };
@@ -323,4 +328,49 @@ test('technicalScope returns channels of delivered repositories, all channels wh
   assert.deepEqual(technicalScope({ delivery: delivered, repositories, channels }), ['api', 'front']);
   assert.deepEqual(technicalScope({ delivery: { state: 'unknown', repositoriesTouched: [] }, repositories, channels }), channels);
   assert.deepEqual(technicalScope({ delivery: { state: 'absent', repositoriesTouched: [] }, repositories, channels }), []);
+});
+
+test('assessDelivery both flags a stale "." ref through its default slug', () => {
+  const git = {
+    hits: [],
+    missingRef: [],
+    missingRepo: [],
+    branchHints: [],
+    checked: ['.'],
+    lastLocalCommitAt: { '.': minutesAgo(600) },
+    slugs: { '.': 'my-app' },
+  };
+  const prs = [pr({ repository: 'my-app', mergedAt: minutesAgo(30) })];
+  const result = assessDelivery({ mode: 'both', git, tracker: prs, branch: 'testing', now: NOW, recentMinutes: 60 });
+  assert.deepEqual(result.staleRefs, [{ repository: 'my-app', lastLocalAt: minutesAgo(600), mergedAt: minutesAgo(30) }]);
+});
+
+test('gitLogDelivery maps configured names to tracker slugs, "." defaulting to the host directory name', () => {
+  const { slugs } = gitLogDelivery({
+    root: '/work/my-app',
+    repositoriesDir: '/nowhere',
+    repositories: [
+      { name: '.', channel: 'front' },
+      { name: 'api', channel: 'api', slug: 'acme-api' },
+      { name: 'bo', channel: 'bo' },
+    ],
+    branch: 'testing',
+    key: 'WV-1',
+  });
+  assert.deepEqual(slugs, { '.': 'my-app', api: 'acme-api', bo: 'bo' });
+});
+
+test('a "." repository matches tracker PRs through its default slug', () => {
+  const repositories = [
+    { name: '.', channel: 'front' },
+    { name: 'api', channel: 'api', slug: 'acme/api-server' },
+  ];
+  const delivery = { state: 'recent', repositoriesTouched: ['acme/my-app', 'api-server'] };
+  assert.deepEqual(technicalScope({ delivery, repositories, channels: ['front', 'api', 'mobile'], root: '/work/my-app' }), ['front', 'api']);
+});
+
+test('a touched repository matching no configured entry yields all channels', () => {
+  const repositories = [{ name: 'api', channel: 'api' }];
+  const delivery = { state: 'effective', repositoriesTouched: ['api', 'unlisted'] };
+  assert.deepEqual(technicalScope({ delivery, repositories, channels: ['front', 'api'] }), ['front', 'api']);
 });

@@ -29,5 +29,8 @@
   "warnings.otherTargets": "Les PR mergées visent {targets}, pas {branch} : vérifier l’environnement choisi.",
   "warnings.partial": "Livraison partielle : {repository} a des PR mergées mais aucune vers {branch} — vérifier git log origin/{branch} de ce dépôt avant de conclure.",
   "warnings.deliveryUnknown": "Livraison non vérifiée : {reason}.",
-  "warnings.staleRef": "Refs locales de {repository} en retard (dernier commit local {localDate}, merge {mergedAt}) : faire git fetch avant de conclure."
+  "warnings.staleRef": "Refs locales de {repository} en retard (dernier commit local {localDate}, merge {mergedAt}) : faire git fetch avant de conclure.",
+  "delivery.reason.mode-none": "vérification de livraison désactivée (mode none)",
+  "delivery.reason.tracker-unknown": "le tracker ne peut pas connaître les PR",
+  "delivery.reason.no-ref-readable": "aucune ref origin/{branch} lisible dans les dépôts"
 }
