@@ -24,7 +24,7 @@
 - Exit codes: `0` ok, `1` blocked / failed, `2` usage or config error, `3` secrets missing, `4` tracker error, `5` HTTP 5xx (api script).
 - Comment marker `[test-ticket]` and data marker `[test-ticket:data]` are constants, never translated.
 - Verdict codes `OK | KO | INCONCLUSIVE`, case results `OK | KO | UNSTABLE`, priorities `P1 | P2 | P3` are canonical codes; locales give their labels.
-- Test files sit next to the module: `scripts/lib/<name>.test.mjs`; `npm test` runs `node --test "scripts/**/*.test.mjs"`.
+- Test files sit next to the module: `scripts/lib/<name>.test.mjs`; `npm test` runs `node --test` (no arguments: default discovery of `**/*.test.mjs`, which works on Node 20 unlike glob arguments).
 - Commit after each task; conventional messages (`feat:`, `test:`, `docs:`, `chore:`).
 
 ## Review Focus
