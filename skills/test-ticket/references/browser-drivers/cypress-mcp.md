@@ -1,14 +1,15 @@
 # Driver mapping: `cypress-mcp`
 
-> **Status: community server, unverified on 2026-10-30 — verify the tool names before
-> relying on it.** Fill the `<…>` placeholders from the server's own tool list (`/mcp` in
+> **Status: community server, unverified on 2026-10-30 — verify the tool names and pin a
+> version before use.** Fill the `<…>` placeholders from the server's own tool list (`/mcp` in
 > Claude Code, or `ToolSearch`) and pin the version you verified in the install command.
 > Until the tool names are filled in, copy this file into the host as a `custom` mapping
 > and point `browser.driverMapping` to it; if the driver check cannot find the tools, stop
 > before the plan and say so. Never edit the plugin's files during a run.
 
-Server: `cypress-mcp` (npm, community). Install entry written by setup (from
-`templates/mcp/cypress-mcp.json`):
+Server: `cypress-mcp` (npm, community). Setup writes **no** `.mcp.json` entry for it: it
+prints the install command of `templates/mcp/cypress-mcp.json` (unpinned) and the user adds
+the entry, a pinned version, to `.mcp.json` themselves, one per session `mcpServer`:
 
 ```json
 { "command": "npx", "args": ["-y", "cypress-mcp"] }

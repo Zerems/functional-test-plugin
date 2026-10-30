@@ -1,5 +1,6 @@
 {
-  "_comment": "community server, unverified: check the package before use",
+  "_comment": "community server, unverified — verify the tool names and pin a version before use; setup prints this command, it never writes it to .mcp.json",
+  "_pin": "unpinned — pin a version before use",
   "servers": {
     "external": { "command": "uvx", "args": ["robotframework-mcp"] }
   }

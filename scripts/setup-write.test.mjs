@@ -114,3 +114,23 @@ test('a malformed .mcp.json stops the setup with exit 2 and a message that does 
   assert.match(stderr, /\.mcp\.json is not valid JSON/);
   assert.doesNotMatch(stderr, /tok-987654/);
 });
+
+test('a community driver gets no .mcp.json entry but its install command and the unverified warning', () => {
+  for (const [driver, command] of [['cypress-mcp', 'npx -y cypress-mcp'], ['robotframework-mcp', 'uvx robotframework-mcp']]) {
+    const dir = tmpDir();
+    const config = answers();
+    config.browser = { driver };
+    for (const session of Object.values(config.sessions)) {
+      session.mode = 'external';
+      delete session.file;
+      delete session.command;
+    }
+    const { code, stdout, stderr } = run(dir, [writeAnswers(dir, config), '--no-preflight']);
+    assert.equal(code, 0, stderr);
+    const servers = JSON.parse(fs.readFileSync(path.join(dir, '.mcp.json'), 'utf8')).mcpServers;
+    assert.deepEqual(Object.keys(servers), ['playwright-test'], driver);
+    assert.ok(stdout.includes(`Install command: ${command}`), stdout);
+    assert.match(stdout, /community server, unverified — verify the tool names and pin a version before use/);
+    assert.match(stdout, /playwright, playwright-bo/);
+  }
+});

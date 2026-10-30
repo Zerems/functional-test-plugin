@@ -57,8 +57,10 @@ npm dependency (Node.js only).
 - Node.js 20 or later.
 - A tracker token (Jira e-mail and API token, or a GitHub token), **or** a Markdown file
   describing the ticket (the `file` tracker needs no credentials).
-- A Playwright MCP server for the UI channels (the setup writes the `.mcp.json` entry; Cypress
-  and Robot Framework MCP servers and custom drivers are also supported, see below).
+- A Playwright MCP server for the UI channels (the setup writes the `.mcp.json` entry). Cypress
+  and Robot Framework MCP servers are available as unverified community mappings (the setup
+  prints their install command, you add and pin the entry yourself); custom drivers are
+  supported, see below.
 - For the delivery check, local clones of the application repositories (read-only; the plugin
   never runs `git fetch`), or `delivery.mode: "none"`.
 
@@ -75,8 +77,8 @@ server whose tools were not verified; **notes** = guidance only; **planned** = n
 | Tracker | Custom module (your own adapter) | reference (see [adapters](docs/adapters.md)) |
 | Tracker | GitLab, Linear | planned |
 | Browser driver | Playwright MCP | reference |
-| Browser driver | Cypress MCP | community, unverified |
-| Browser driver | Robot Framework MCP | community, unverified |
+| Browser driver | Cypress MCP | community, unverified (no `.mcp.json` entry written) |
+| Browser driver | Robot Framework MCP | community, unverified (no `.mcp.json` entry written) |
 | Browser driver | Custom mapping | supported (see [adapters](docs/adapters.md)) |
 | Automation framework | Playwright | reference |
 | Automation framework | Cypress, Robot Framework | notes |

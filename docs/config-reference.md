@@ -102,7 +102,7 @@ named after the key that are not merged.
 
 | Field | Type | Default | Rule |
 |---|---|---|---|
-| `browser.driver` | string | `"playwright-mcp"` | `playwright-mcp`, `cypress-mcp`, `robotframework-mcp` or `custom`. |
+| `browser.driver` | string | `"playwright-mcp"` | `playwright-mcp`, `cypress-mcp`, `robotframework-mcp` or `custom`. The two community drivers are unverified: the setup writes no `.mcp.json` entry for them and prints their unpinned install command. |
 | `browser.driverMapping` | string | none | Required when `driver` is `custom`: path of the mapping file (see [adapters](adapters.md)); the preflight checks that it exists. |
 | `browser.engine` | string | `"chromium"` | Browser engine given to the server (`chromium`, `msedge`, `chrome`, `firefox`, `webkit`) when the driver supports it. Not validated. |
 | `browser.viewport` | string | `"1440x900"` | `<width>x<height>`. Not validated. |

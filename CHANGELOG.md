@@ -19,7 +19,8 @@ First release.
 - Delivery check from `git log`, tracker pull requests, or both; session modes
   `persistent-profile`, `storage-state` and `external`.
 - Browser drivers: Playwright MCP (reference), Cypress MCP and Robot Framework MCP
-  (community, unverified), custom mapping. Automation frameworks: Playwright, Cypress,
+  (unverified community mappings: install command printed, no `.mcp.json` entry written),
+  custom mapping. Automation frameworks: Playwright, Cypress,
   Robot Framework notes, other.
 - Output in English and French (`locales/`), no npm dependency (Node.js 20 or later).
 - Documentation: README, configuration reference, adapters guide, acceptance check.

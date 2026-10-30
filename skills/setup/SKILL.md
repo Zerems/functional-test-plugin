@@ -81,7 +81,8 @@ Then `defaultEnvironment`: `fallback` (default: the first environment) and optio
 Only when a channel declares a `session`.
 
 - `browser.driver`: `playwright-mcp` (default, reference) | `cypress-mcp` |
-  `robotframework-mcp` (community servers, unverified) | `custom` (`browser.driverMapping`:
+  `robotframework-mcp` (community servers, unverified: setup writes no `.mcp.json` entry
+  for them, only prints their install command) | `custom` (`browser.driverMapping`:
   path to a mapping file copied from
   `${CLAUDE_PLUGIN_ROOT}/skills/test-ticket/references/browser-drivers/template.md`).
 - `browser.engine`: `chromium` (default) | `msedge` | `chrome` | `firefox` | `webkit`;
@@ -155,10 +156,13 @@ In `config.language`:
 1. The written and skipped files, as printed.
 2. The variables to fill in `.env` (never committed): their **names** only, from the block
    between `# >>> functional-test` and `# <<< functional-test` of `.env.example`.
-3. Community driver (`cypress-mcp`, `robotframework-mcp`): the install command of
-   `${CLAUDE_PLUGIN_ROOT}/templates/mcp/<driver>.json` (`npx -y cypress-mcp`,
-   `uvx robotframework-mcp`), the warning that the server is unverified, and that its
-   tool names must be filled in a `custom` mapping (see its mapping file) before use.
+3. Community driver (`cypress-mcp`, `robotframework-mcp`): setup wrote **no** `.mcp.json`
+   entry for it. Relay the install command it printed (from
+   `${CLAUDE_PLUGIN_ROOT}/templates/mcp/<driver>.json`: `npx -y cypress-mcp`,
+   `uvx robotframework-mcp`, unpinned) and the warning: community server, unverified —
+   verify the tool names and pin a version before use. The user adds the entry to
+   `.mcp.json` themselves (one per session `mcpServer`), and fills the tool names in a
+   `custom` mapping (see its mapping file) before use.
    `custom` driver or a non-Playwright `testMcpServer`: the user adds those servers to
    `.mcp.json` themselves.
 4. Activate the MCP servers: reopen Claude Code at the host root and accept the servers of

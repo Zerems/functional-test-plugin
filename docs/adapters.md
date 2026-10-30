@@ -180,7 +180,8 @@ of a login page), and a *driver mapping* file says which tool of the configured 
 performs each one. Built-in mappings live in
 `skills/test-ticket/references/browser-drivers/`: `playwright-mcp.md` (reference),
 `cypress-mcp.md` and `robotframework-mcp.md` (community servers, unverified: their tool
-names are placeholders to fill and verify before use).
+names are placeholders to fill and verify before use; the setup writes no `.mcp.json` entry
+for them, it prints their unpinned install command).
 
 To drive any other browser MCP server:
 

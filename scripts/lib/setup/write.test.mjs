@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { applyDefaults, ConfigError, validateConfig } from '../config.mjs';
 import { translator } from '../i18n.mjs';
-import { appendEnvExample, envExampleBlock, gitignoreAdditions, mcpEntriesFor, mergeMcpJson, writeHostFiles } from './write.mjs';
+import { appendEnvExample, communityDriverInstall, envExampleBlock, gitignoreAdditions, mcpEntriesFor, mergeMcpJson, writeHostFiles } from './write.mjs';
 
 const t = translator('en');
 const START = '# >>> functional-test';
@@ -75,9 +75,22 @@ test('mcpEntriesFor covers every environment once, skips external sessions and c
   assert.deepEqual(Object.keys(mcpEntriesFor(config, root)), ['playwright-bo']);
   const custom = sampleConfig({ browser: { driver: 'custom', driverMapping: 'docs/mapping.md' } });
   assert.deepEqual(Object.keys(mcpEntriesFor(custom, root)), ['playwright-test']);
-  const cypress = sampleConfig({ browser: { driver: 'cypress-mcp' }, automation: { framework: 'cypress', testMcpServer: 'cy' } });
-  assert.deepEqual(mcpEntriesFor(cypress, root).playwright, { command: 'npx', args: ['-y', 'cypress-mcp'] });
-  assert.equal(Object.hasOwn(mcpEntriesFor(cypress, root).playwright, '_comment'), false);
+});
+
+test('mcpEntriesFor writes no browser entry for the unverified community drivers', () => {
+  const root = tmpDir();
+  for (const driver of ['cypress-mcp', 'robotframework-mcp']) {
+    const config = sampleConfig({ browser: { driver }, automation: { framework: 'cypress', testMcpServer: 'cy' } });
+    for (const session of Object.values(config.sessions)) session.mode = 'external';
+    assert.deepEqual(mcpEntriesFor(config, root), {}, driver);
+  }
+});
+
+test('communityDriverInstall gives the install command and pin note of a community driver only', () => {
+  assert.deepEqual(communityDriverInstall('cypress-mcp'), { command: 'npx -y cypress-mcp', pin: 'unpinned — pin a version before use' });
+  assert.deepEqual(communityDriverInstall('robotframework-mcp'), { command: 'uvx robotframework-mcp', pin: 'unpinned — pin a version before use' });
+  assert.equal(communityDriverInstall('playwright-mcp'), null);
+  assert.equal(communityDriverInstall('custom'), null);
 });
 
 test('mcpEntriesFor does not mutate the templates between calls', () => {

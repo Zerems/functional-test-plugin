@@ -15,10 +15,9 @@ import { UsageError, parseFlags, reportError } from './lib/cli.mjs';
 import { ConfigError, applyDefaults, requiredEnvVars, validateConfig } from './lib/config.mjs';
 import { findHostRoot } from './lib/host.mjs';
 import { availableLanguages, translator } from './lib/i18n.mjs';
-import { writeHostFiles } from './lib/setup/write.mjs';
+import { communityDriverInstall, writeHostFiles } from './lib/setup/write.mjs';
 
 const PREFLIGHT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'preflight.mjs');
-const COMMUNITY_DRIVERS = ['cypress-mcp', 'robotframework-mcp'];
 
 async function main(argv) {
   const en = translator('en');
@@ -61,11 +60,15 @@ async function main(argv) {
 
   const next = [];
   const { required, optional } = requiredEnvVars(config);
-  if (required.length + optional.length > 0) next.push('setup.nextEnv');
+  if (required.length + optional.length > 0) next.push(lang('setup.nextEnv'));
+  const community = communityDriverInstall(config.browser.driver);
   const manual = config.browser.driver === 'custom' || (config.automation.testMcpServer && config.automation.framework !== 'playwright');
-  if (manual) next.push('setup.nextMcpManual');
-  if (COMMUNITY_DRIVERS.includes(config.browser.driver)) next.push('setup.nextMcpCheck');
-  for (const key of next) process.stdout.write(`${lang(key)}\n`);
+  if (manual && !community) next.push(lang('setup.nextMcpManual'));
+  if (community) {
+    const servers = [...new Set(Object.values(config.sessions ?? {}).map((session) => session.mcpServer))].join(', ');
+    next.push(lang('setup.nextMcpCommunity', { driver: config.browser.driver, servers: servers || '-' }), lang('setup.installCommand', { command: community.command }));
+  }
+  for (const line of next) process.stdout.write(`${line}\n`);
 
   if (flags['no-preflight']) return 0;
   return spawnSync(process.execPath, [PREFLIGHT], { cwd: root, stdio: 'inherit' }).status ?? 1;

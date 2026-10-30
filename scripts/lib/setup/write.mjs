@@ -12,7 +12,9 @@ import { IGNORED } from '../preflight.mjs';
 import { profileDir } from '../session.mjs';
 
 const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'templates');
-const DRIVER_TEMPLATES = { 'playwright-mcp': 'playwright-mcp', 'cypress-mcp': 'cypress-mcp', 'robotframework-mcp': 'robotframework-mcp' };
+const DRIVER_TEMPLATES = { 'playwright-mcp': 'playwright-mcp' };
+// Unverified community servers: never written to .mcp.json, their install command is printed.
+const COMMUNITY_TEMPLATES = { 'cypress-mcp': 'cypress-mcp', 'robotframework-mcp': 'robotframework-mcp' };
 const TEST_MCP_TEMPLATES = { playwright: 'playwright-test' };
 
 export const ENV_BLOCK_START = '# >>> functional-test';
@@ -21,9 +23,23 @@ export const ENV_BLOCK_END = '# <<< functional-test';
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const toPosix = (p) => p.split(path.sep).join('/');
 
-/** `servers` of the MCP template `name` (templates are always read from the plugin, never from the host). */
-function readTemplate(name) {
-  return JSON.parse(nodeFs.readFileSync(path.join(TEMPLATES_DIR, 'mcp', `${name}.json`), 'utf8')).servers;
+/** The MCP template `name` (templates are always read from the plugin, never from the host). */
+function readTemplateFile(name) {
+  return JSON.parse(nodeFs.readFileSync(path.join(TEMPLATES_DIR, 'mcp', `${name}.json`), 'utf8'));
+}
+
+/** `servers` of the MCP template `name`. */
+const readTemplate = (name) => readTemplateFile(name).servers;
+
+/**
+ * `{ command, pin }` for a community browser driver (cypress-mcp, robotframework-mcp): the
+ * install command line of its template and its pin note; null for any other driver.
+ */
+export function communityDriverInstall(driver) {
+  if (!Object.hasOwn(COMMUNITY_TEMPLATES, driver)) return null;
+  const template = readTemplateFile(COMMUNITY_TEMPLATES[driver]);
+  const { command, args = [] } = template.servers.external;
+  return { command: [command, ...args].join(' '), pin: template._pin };
 }
 
 /** Deep copy of an entry template with every `{{name}}` of its strings replaced from `values`. */
@@ -37,7 +53,8 @@ function fill(value, values) {
 /**
  * The `.mcp.json` entries the config needs, `{ [serverName]: entry }`: one per session of any
  * environment (the driver template picked by `browser.driver` and the session mode; none for a
- * custom driver or an external Playwright session), plus the test MCP server of the automation
+ * custom driver, an unverified community driver or an external Playwright session), plus the
+ * test MCP server of the automation
  * framework when it is known (Playwright only).
  */
 export function mcpEntriesFor(config, root) {
