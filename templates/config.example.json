@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "language": "fr",
+  "tracker": {
+    "type": "jira",
+    "baseUrl": "https://tracker.example.com",
+    "projects": ["WV", "WVS"],
+    "statuses": {
+      "toTest": ["Test"],
+      "doNotTest": ["Pas un bug", "Besoin story", "En attente d'infos"],
+      "afterOk": "Test OK",
+      "afterKo": "Test KO",
+      "perProject": { "WVS": { "afterOk": "Test Ok" } }
+    }
+  },
+  "environments": {
+    "testing": {
+      "branch": "testing",
+      "channels": {
+        "front": { "url": "https://app-testing.example.com", "session": "front" },
+        "bo": { "url": "https://bo-testing.example.com", "session": "bo" },
+        "api": { "url": "https://api-testing.example.com", "auth": "agency" }
+      }
+    },
+    "demo": {
+      "branch": "demo",
+      "channels": {
+        "front": { "url": "https://app-demo.example.com", "session": "front" },
+        "bo": { "url": "https://bo-demo.example.com", "session": "bo" },
+        "api": { "url": "https://api-demo.example.com", "auth": "agency" }
+      }
+    }
+  },
+  "defaultEnvironment": { "fallback": "testing", "byProject": { "WVS": "demo" } },
+  "delivery": {
+    "mode": "git-log",
+    "recentMinutes": 60,
+    "repositoriesDir": "..",
+    "repositories": [
+      { "name": "front-app", "channel": "front" },
+      { "name": "backend-api", "channel": "api" },
+      { "name": "legacy-api", "channel": "api" },
+      { "name": "back-office", "channel": "bo" },
+      { "name": "mobile-app", "channel": "mobile" }
+    ]
+  },
+  "browser": {
+    "driver": "playwright-mcp",
+    "engine": "chromium",
+    "viewport": "1440x900"
+  },
+  "sessions": {
+    "front": { "mode": "persistent-profile", "mcpServer": "playwright" },
+    "bo": {
+      "mode": "storage-state",
+      "mcpServer": "playwright-bo",
+      "file": ".auth/bo.json",
+      "command": "npx playwright test --project=bo-auth-setup --reporter=list"
+    }
+  },
+  "auth": {
+    "agency": {
+      "preset": "password-login",
+      "loginPath": "/v1/auth/agency/login",
+      "usernameEnv": "API_AGENCY_USERNAME",
+      "passwordEnv": "API_AGENCY_PASSWORD"
+    }
+  },
+  "testData": { "prefix": "[E2E]", "emailDomains": ["e2e.example.test"] },
+  "pitfallsFile": ".claude/functional-test/pitfalls.md",
+  "automation": {
+    "framework": "playwright",
+    "specPaths": ["tests/"],
+    "branchPattern": "test/{key-lower}-{slug}",
+    "excludedFile": ".claude/functional-test/excluded.json",
+    "howToWriteTests": "CLAUDE.md",
+    "testMcpServer": "playwright-test",
+    "runCommand": "npx playwright test {file}"
+  }
+}
