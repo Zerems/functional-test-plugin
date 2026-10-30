@@ -85,5 +85,15 @@
   "api.unknownAuth": "unknown auth: {auth} (expected: {expected})",
   "api.credentialsUnreadable": "credentials file unreadable: {file} (expected: {\"username\",\"password\"})",
   "api.credentialsIncomplete": "credentials file incomplete: {file} (expected: {\"username\",\"password\"})",
-  "api.bodyUnreadable": "body file unreadable: {file}"
+  "api.bodyUnreadable": "body file unreadable: {file}",
+  "session.usage": "usage: session.mjs --env <name> --session <name> [--force]",
+  "session.reason.absent": "no session file",
+  "session.reason.unreadable": "session file unreadable",
+  "session.reason.wrong-host": "recorded for {known}, not for {host}",
+  "session.reason.cookies-expired": "cookies expired",
+  "session.reason.too-old": "older than {hours} h",
+  "session.noKnownHost": "no host",
+  "session.setupRun": "session {session}: {reason}; running its setup command for {host}",
+  "session.setupForced": "session {session}: forced; running its setup command for {host}",
+  "session.setupFailed": "setup command did not complete: {status}"
 }
