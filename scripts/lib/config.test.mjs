@@ -233,3 +233,17 @@ test('loadConfig reports unreadable or malformed JSON as a ConfigError', () => {
   fs.rmSync(root, { recursive: true });
   assert.throws(() => loadConfig(path.join(os.tmpdir(), 'ft-no-such-host')), ConfigError);
 });
+
+test('validateConfig reports an unknown session mode', () => {
+  const config = validExample();
+  config.sessions.front.mode = 'cookie-jar';
+  const errors = validateConfig(config);
+  assert.ok(errors.some((e) => e.startsWith('sessions.front.mode: ')), errors.join('\n'));
+});
+
+test('validateConfig reports an unknown automation framework', () => {
+  const config = validExample();
+  config.automation.framework = 'selenium';
+  const errors = validateConfig(config);
+  assert.ok(errors.some((e) => e.startsWith('automation.framework: ')), errors.join('\n'));
+});

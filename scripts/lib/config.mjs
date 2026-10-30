@@ -15,6 +15,8 @@ const TRACKERS_WITH_PROJECTS = ['jira', 'github'];
 const AUTH_PRESETS = ['password-login', 'static-token', 'none', 'custom'];
 const DELIVERY_MODES = ['git-log', 'tracker', 'both', 'none'];
 const GIT_DELIVERY_MODES = ['git-log', 'both'];
+const SESSION_MODES = ['persistent-profile', 'storage-state', 'external'];
+const AUTOMATION_FRAMEWORKS = ['playwright', 'cypress', 'robotframework', 'other'];
 const BROWSER_DRIVERS = ['playwright-mcp', 'cypress-mcp', 'robotframework-mcp', 'custom'];
 
 const SPEC_PATHS = { playwright: ['tests/'], cypress: ['cypress/e2e/'], robotframework: ['tests/'] };
@@ -102,6 +104,7 @@ const checks = [
     for (const [name, session] of entries(c.sessions)) {
       const at = `sessions.${name}`;
       if (!isFilled(session?.mcpServer)) err(`${at}.mcpServer`, 'is required');
+      if (!SESSION_MODES.includes(session?.mode)) err(`${at}.mode`, `must be one of ${SESSION_MODES.join(', ')}`);
       if (session?.mode === 'storage-state') {
         if (!isFilled(session.file)) err(`${at}.file`, 'is required for a storage-state session');
         if (!isFilled(session.command)) err(`${at}.command`, 'is required for a storage-state session');
@@ -141,6 +144,13 @@ const checks = [
     if (!BROWSER_DRIVERS.includes(b?.driver)) err('browser.driver', `must be one of ${BROWSER_DRIVERS.join(', ')}`);
     if (b?.driver === 'custom' && !isFilled(b.driverMapping)) {
       err('browser.driverMapping', 'is required for a custom driver');
+    }
+  },
+
+  (c, err) => {
+    const framework = c.automation?.framework;
+    if (!AUTOMATION_FRAMEWORKS.includes(framework)) {
+      err('automation.framework', `must be one of ${AUTOMATION_FRAMEWORKS.join(', ')}`);
     }
   },
 
