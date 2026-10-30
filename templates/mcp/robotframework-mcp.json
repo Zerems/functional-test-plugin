@@ -1,0 +1,6 @@
+{
+  "_comment": "community server, unverified: check the package before use",
+  "servers": {
+    "external": { "command": "uvx", "args": ["robotframework-mcp"] }
+  }
+}

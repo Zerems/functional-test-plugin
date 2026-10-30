@@ -99,7 +99,7 @@ export function checkMcp(config, envName, mcpJsonText, root) {
   return needed.map(({ server, expectation }) => check(server, expectation));
 }
 
-const IGNORED = {
+export const IGNORED = {
   '.env': ['.env', '/.env', '.env*', '/.env*'],
   '.auth/': ['.auth', '.auth/', '/.auth', '/.auth/', '.auth/*', '/.auth/*'],
 };

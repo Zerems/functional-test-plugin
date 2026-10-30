@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "persistent-profile": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83", "--browser", "{{engine}}", "--viewport-size", "{{viewport}}", "--user-data-dir", "{{profileDir}}"]
+    },
+    "storage-state": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83", "--browser", "{{engine}}", "--isolated", "--storage-state", "{{storageState}}", "--viewport-size", "{{viewport}}"]
+    }
+  }
+}

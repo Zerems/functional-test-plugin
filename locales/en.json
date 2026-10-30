@@ -124,5 +124,20 @@
   "candidates.noneListed": "none",
   "candidates.missingCase": "(case missing from the comment)",
   "candidates.truncated": "Warning: the tracker search was truncated, the list may be incomplete.",
-  "candidates.unsupported": "Candidates are unavailable with the file tracker."
+  "candidates.unsupported": "Candidates are unavailable with the file tracker.",
+  "setup.usage": "usage: setup-write.mjs <answers.json> [--no-preflight]",
+  "setup.unreadable": "cannot read the answers file {file}: {message}",
+  "setup.invalid": "the answers are not a valid configuration:",
+  "setup.written": "written: {path}",
+  "setup.skipped": "skipped (nothing to change): {path}",
+  "setup.nextEnv": "Next: copy the variables of .env.example into .env (never committed) and fill in their values.",
+  "setup.nextMcpManual": "Next: add the MCP servers of your browser driver and test framework to .mcp.json yourself; setup could not generate them.",
+  "setup.nextMcpCheck": "Next: the generated MCP server is a community one, unverified: check the package before use.",
+  "setup.purpose.JIRA_EMAIL": "Jira account email",
+  "setup.purpose.JIRA_API_TOKEN": "Jira API token",
+  "setup.purpose.GITHUB_TOKEN": "GitHub personal access token",
+  "setup.purpose.authUsername": "login of the \"{auth}\" API account",
+  "setup.purpose.authPassword": "password of the \"{auth}\" API account",
+  "setup.purpose.authToken": "token of the \"{auth}\" API account",
+  "setup.purpose.other": "used by the functional-test configuration"
 }

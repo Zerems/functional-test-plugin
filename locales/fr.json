@@ -124,5 +124,20 @@
   "candidates.noneListed": "aucun",
   "candidates.missingCase": "(cas absent du commentaire)",
   "candidates.truncated": "Attention : la recherche du tracker a été tronquée, la liste peut être incomplète.",
-  "candidates.unsupported": "Les candidats ne sont pas disponibles avec le tracker fichier."
+  "candidates.unsupported": "Les candidats ne sont pas disponibles avec le tracker fichier.",
+  "setup.usage": "usage : setup-write.mjs <réponses.json> [--no-preflight]",
+  "setup.unreadable": "impossible de lire le fichier de réponses {file} : {message}",
+  "setup.invalid": "les réponses ne forment pas une configuration valide :",
+  "setup.written": "écrit : {path}",
+  "setup.skipped": "ignoré (rien à changer) : {path}",
+  "setup.nextEnv": "Ensuite : copiez les variables de .env.example dans .env (jamais commité) et renseignez leurs valeurs.",
+  "setup.nextMcpManual": "Ensuite : ajoutez vous-même à .mcp.json les serveurs MCP de votre pilote navigateur et de votre framework de tests ; le setup n'a pas pu les générer.",
+  "setup.nextMcpCheck": "Ensuite : le serveur MCP généré est un serveur communautaire non vérifié : contrôlez le paquet avant de l'utiliser.",
+  "setup.purpose.JIRA_EMAIL": "email du compte Jira",
+  "setup.purpose.JIRA_API_TOKEN": "jeton d'API Jira",
+  "setup.purpose.GITHUB_TOKEN": "jeton d'accès personnel GitHub",
+  "setup.purpose.authUsername": "identifiant du compte API « {auth} »",
+  "setup.purpose.authPassword": "mot de passe du compte API « {auth} »",
+  "setup.purpose.authToken": "jeton du compte API « {auth} »",
+  "setup.purpose.other": "utilisé par la configuration functional-test"
 }
