@@ -63,6 +63,14 @@ test('password-login error message never contains the password', async () => {
     return true;
   });
 
+  const notJson = fakeFetch([{ match: () => true, body: 'oops hunter2-secret <html>' }]);
+  const invalid = await createAuth('api', loginSection, env, { fetchImpl: notJson });
+  await assert.rejects(invalid.authenticate('https://api.example.test'), (error) => {
+    assert.equal(error.message, 'login api: invalid response');
+    assert.ok(!error.message.includes('hunter2-secret'));
+    return true;
+  });
+
   const noToken = fakeFetch([{ match: () => true, body: { hello: 'world' } }]);
   const other = await createAuth('api', loginSection, env, { fetchImpl: noToken });
   await assert.rejects(other.authenticate('https://api.example.test'), { message: 'login api: no token in response' });

@@ -32,7 +32,13 @@ export function createPasswordLogin(name, section, env, { fetchImpl = fetch } = 
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!response.ok) throw new Error(`login ${name} refused (${response.status})`);
-      const body = await response.json();
+      let body;
+      try {
+        body = await response.json();
+      } catch {
+        // The parse error may quote the answer: say nothing about it.
+        throw new Error(`login ${name}: invalid response`);
+      }
       const token = body?.[section.tokenField ?? 'access_token'];
       if (!token) throw new Error(`login ${name}: no token in response`);
       const lifetime = Number(body[section.expiresField ?? 'expires_in'] ?? DEFAULT_LIFETIME_S);

@@ -50,6 +50,7 @@ async function stubApi() {
       if (!req.headers.authorization?.startsWith('Bearer jwt-')) return send(401, {});
       if (req.url === '/v1/me') return send(200, { id: 'u1', name: 'Collab', apiToken: 'leaky-token', nested: { password: 'leaky-pw' } });
       if (req.url === '/v1/boom') return send(503, 'upstream down');
+      if (req.url === '/v1/text') return send(200, `debug: ${req.headers.authorization} user=collab pass=correct-password ok`);
       if (req.url === '/v1/missing') return send(404, { message: 'not here' });
       if (req.url === '/v1/echo') return send(201, { received: JSON.parse(raw || 'null') });
       return send(404, {});
@@ -111,6 +112,28 @@ test('api.mjs sends a body from the command line or a file, and answers a 4xx wi
     const missing = await run(host.dir, ['--env', 'testing', 'GET', '/v1/missing'], secrets);
     assert.equal(missing.code, 0);
     assert.match(missing.stdout, /^404 GET \/v1\/missing/);
+  } finally {
+    host.cleanup();
+    await api.close();
+  }
+});
+
+test('api.mjs redacts the token and the credentials from a plain-text body, with or without --raw', async () => {
+  const api = await stubApi();
+  const host = makeHost(api.url);
+  try {
+    for (const extra of [[], ['--raw']]) {
+      const { code, stdout, stderr } = await run(host.dir, ['--env', 'testing', ...extra, 'GET', '/v1/text'], secrets);
+      assert.equal(code, 0, stderr);
+      assert.match(stdout, /^200 GET \/v1\/text \(\d+ ms\)\ndebug: Bearer \*\*\* user=\*\*\* pass=\*\*\* ok\n$/);
+      assert.ok(!stdout.includes('jwt-collab'));
+      assert.ok(!stdout.includes('correct-password'));
+    }
+
+    fs.writeFileSync(path.join(host.dir, 'worker.json'), JSON.stringify({ username: 'worker@e2e', password: 'correct-password' }));
+    const explicit = await run(host.dir, ['--env', 'testing', '--credentials', 'worker.json', 'GET', '/v1/text']);
+    assert.match(explicit.stdout, /debug: Bearer \*\*\* user=collab pass=\*\*\* ok/);
+    assert.ok(!explicit.stdout.includes('jwt-worker') && !explicit.stdout.includes('correct-password'));
   } finally {
     host.cleanup();
     await api.close();

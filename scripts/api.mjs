@@ -16,7 +16,7 @@ import { ConfigError, loadConfig } from './lib/config.mjs';
 import { loadEnv } from './lib/env.mjs';
 import { findHostRoot } from './lib/host.mjs';
 import { translator } from './lib/i18n.mjs';
-import { maskSecrets } from './lib/secrets.mjs';
+import { maskSecrets, redactValues } from './lib/secrets.mjs';
 
 /** The `{ username, password }` of a credentials file; UsageError when unreadable or incomplete. */
 function readCredentials(file, t) {
@@ -39,9 +39,15 @@ function readBody(body, t) {
   }
 }
 
-/** The body as printed: masked, a string as is, an object pretty-printed (compact with --raw). */
-function render(body, raw) {
-  if (typeof body === 'string') return body;
+/** Values that must never be printed: the token, the credentials in use and the auth's environment variables. */
+function secretValues(section, credentials, token) {
+  const variables = [section.usernameEnv, section.passwordEnv, section.tokenEnv].map((name) => process.env[name]);
+  return [token, credentials?.username, credentials?.password, ...variables];
+}
+
+/** The body as printed: a string with the secret values redacted, an object masked and pretty-printed (compact with --raw). */
+function render(body, raw, secrets) {
+  if (typeof body === 'string') return redactValues(body, secrets);
   const masked = maskSecrets(body);
   return raw ? JSON.stringify(masked) : JSON.stringify(masked, null, 2);
 }
@@ -90,7 +96,7 @@ async function main(argv) {
     if (cacheFile && cache.token !== tokenBefore) writeTokenCache(cacheFile, cache);
 
     process.stdout.write(`${result.status} ${options.method} ${options.path} (${result.durationMs} ms)\n`);
-    if (result.body !== null) process.stdout.write(`${render(result.body, options.raw)}\n`);
+    if (result.body !== null) process.stdout.write(`${render(result.body, options.raw, secretValues(config.auth[authName], credentials, cache.token))}\n`);
     return result.status >= 500 ? 5 : 0;
   } catch (error) {
     return reportError(error, t);

@@ -10,3 +10,16 @@ export function maskSecrets(value) {
   }
   return value;
 }
+
+const MIN_REDACTED_LENGTH = 4;
+
+/**
+ * `text` with every occurrence of each value replaced by `***`. Values shorter than 4
+ * characters (or empty / not strings) are ignored so that a short value cannot mask the text.
+ */
+export function redactValues(text, values) {
+  const candidates = [...new Set(values)]
+    .filter((value) => typeof value === 'string' && value.length >= MIN_REDACTED_LENGTH)
+    .sort((a, b) => b.length - a.length);
+  return candidates.reduce((out, value) => out.split(value).join('***'), text);
+}
