@@ -79,8 +79,9 @@ export function checkMcp(config, envName, mcpJsonText, root) {
   try {
     const parsed = JSON.parse(mcpJsonText);
     servers = parsed?.mcpServers && typeof parsed.mcpServers === 'object' ? parsed.mcpServers : {};
-  } catch (error) {
-    return [line('ko', 'preflight.mcpFileInvalid', { message: error.message })];
+  } catch {
+    // The parse error quotes the start of the file, which may hold tokens: say nothing about it.
+    return [line('ko', 'preflight.mcpFileInvalid')];
   }
 
   const check = (server, expectation) => {

@@ -36,7 +36,7 @@
   "preflight.mcpMissing": "serveur MCP « {server} » absent de .mcp.json",
   "preflight.mcpMismatch": "serveur MCP « {server} » : argument {expected} attendu",
   "preflight.mcpFileMissing": ".mcp.json absent",
-  "preflight.mcpFileInvalid": ".mcp.json illisible : {message}",
+  "preflight.mcpFileInvalid": ".mcp.json n'est pas un JSON valide",
   "preflight.trackerOk": "tracker joignable ({who})",
   "preflight.trackerUnreachable": "tracker injoignable : {message}",
   "preflight.authOk": "authentification « {auth} » acceptée sur {env}",

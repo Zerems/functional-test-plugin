@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -115,4 +116,115 @@ test('preflight.mjs reports an invalid configuration as one KO line, in the conf
   } finally {
     host.cleanup();
   }
+});
+
+// Network paths: the CLI runs as an async child so that this process can serve the stub meanwhile
+// (spawnSync would block the event loop and the stub could never answer).
+function runAsync(cwd, args = []) {
+  return new Promise((resolve) => {
+    const child = spawn('node', [SCRIPT, ...args], { cwd, env: { PATH: process.env.PATH } });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => (stdout += chunk));
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    child.on('close', (code) => resolve({ code, stdout, stderr }));
+  });
+}
+
+/** Local HTTP stub answering with `handler(req) -> [status, body]`; resolves its origin. */
+async function withStub(handler, fn) {
+  const server = http.createServer((req, res) => {
+    const [status, body] = handler(req);
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(body));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    return await fn(`http://127.0.0.1:${server.address().port}`);
+  } finally {
+    server.close();
+  }
+}
+
+const JIRA_ENV = 'JIRA_EMAIL=me@example.com\nJIRA_API_TOKEN=jira-token-s3cret\n';
+const jiraHost = (baseUrl) =>
+  makeHost({ tracker: { type: 'jira', baseUrl, projects: ['WV'] }, delivery: { mode: 'tracker' } }, { '.env': JIRA_ENV });
+
+test('preflight.mjs prints an OK line when the tracker answers whoami', async () => {
+  await withStub(
+    (req) => (req.url === '/rest/api/3/myself' ? [200, { displayName: 'Alice' }] : [404, {}]),
+    async (origin) => {
+      const host = jiraHost(origin);
+      try {
+        const result = await runAsync(host.dir, ['--env', 'local']);
+        assert.equal(result.code, 0, result.stdout + result.stderr);
+        assert.match(result.stdout, /^OK — tracker reachable \(Alice\)$/m);
+      } finally {
+        host.cleanup();
+      }
+    },
+  );
+});
+
+test('preflight.mjs prints a KO line without the token when the tracker fails', async () => {
+  await withStub(
+    () => [500, { error: 'bad credentials jira-token-s3cret' }],
+    async (origin) => {
+      const host = jiraHost(origin);
+      try {
+        const result = await runAsync(host.dir, ['--env', 'local']);
+        assert.equal(result.code, 1);
+        assert.match(result.stdout, /^KO — tracker unreachable: /m);
+        assert.match(result.stdout, /^--- blocked$/m);
+        assert.doesNotMatch(result.stdout + result.stderr, /jira-token-s3cret/);
+      } finally {
+        host.cleanup();
+      }
+    },
+  );
+});
+
+function apiHost(origin, { optional = false } = {}) {
+  return makeHost(
+    {
+      auth: { agency: { preset: 'password-login', loginPath: '/login', usernameEnv: 'API_USER', passwordEnv: 'API_PASS', ...(optional && { optional }) } },
+      environments: { local: { branch: 'main', channels: { api: { url: origin, auth: 'agency' } } } },
+    },
+    { '.env': 'API_USER=someone\nAPI_PASS=hunter2-secret\n' },
+  );
+}
+
+test('preflight.mjs prints an OK line when the API login is accepted', async () => {
+  await withStub(
+    (req) => (req.url === '/login' && req.method === 'POST' ? [200, { access_token: 'tok-abcdef', expires_in: 300 }] : [404, {}]),
+    async (origin) => {
+      const host = apiHost(origin);
+      try {
+        const result = await runAsync(host.dir, ['--env', 'local']);
+        assert.equal(result.code, 0, result.stdout + result.stderr);
+        assert.match(result.stdout, /^OK — authentication "agency" accepted on local$/m);
+        assert.doesNotMatch(result.stdout, /tok-abcdef/);
+      } finally {
+        host.cleanup();
+      }
+    },
+  );
+});
+
+test('preflight.mjs only warns when an optional auth is refused', async () => {
+  await withStub(
+    () => [401, { message: 'wrong password hunter2-secret' }],
+    async (origin) => {
+      const host = apiHost(origin, { optional: true });
+      try {
+        const result = await runAsync(host.dir, ['--env', 'local']);
+        assert.equal(result.code, 0, result.stdout + result.stderr);
+        assert.match(result.stdout, /^WARNING — authentication "agency" refused on local: /m);
+        assert.match(result.stdout, /^--- ready$/m);
+        assert.doesNotMatch(result.stdout + result.stderr, /hunter2-secret/);
+      } finally {
+        host.cleanup();
+      }
+    },
+  );
 });

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { applyDefaults } from './config.mjs';
+import { translator } from './i18n.mjs';
 import { profileDir } from './session.mjs';
 import { checkConfig, checkDriverMapping, checkEnvVars, checkGitignore, checkMcp, checkRepositories } from './preflight.mjs';
 
@@ -81,6 +82,17 @@ test('checkMcp is ko naming the server when absent', () => {
 test('checkMcp has nothing to check when the environment needs no MCP server', () => {
   const config = makeConfig({ environments: { testing: { branch: 'testing', channels: { api: { url: 'https://api.example.com' } } } } });
   assert.deepEqual(lines(checkMcp(config, 'testing', null, ROOT)), []);
+});
+
+test('checkMcp never echoes the content of a malformed .mcp.json', () => {
+  const secret = 'sk-abcdef123456';
+  const results = lines(checkMcp(makeConfig(), 'testing', secret, ROOT));
+  assert.deepEqual(results, [{ level: 'ko', key: 'preflight.mcpFileInvalid', params: {} }]);
+  for (const lang of ['en', 'fr']) {
+    const t = translator(lang);
+    for (const { key, params } of results) assert.ok(!t(key, params).includes(secret), t(key, params));
+  }
+  assert.ok(!JSON.stringify(results).includes(secret));
 });
 
 test('checkMcp is ko when the playwright profile dir does not match', () => {

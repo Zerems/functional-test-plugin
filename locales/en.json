@@ -36,7 +36,7 @@
   "preflight.mcpMissing": "MCP server \"{server}\" missing from .mcp.json",
   "preflight.mcpMismatch": "MCP server \"{server}\": argument {expected} expected",
   "preflight.mcpFileMissing": ".mcp.json missing",
-  "preflight.mcpFileInvalid": ".mcp.json unreadable: {message}",
+  "preflight.mcpFileInvalid": ".mcp.json is not valid JSON",
   "preflight.trackerOk": "tracker reachable ({who})",
   "preflight.trackerUnreachable": "tracker unreachable: {message}",
   "preflight.authOk": "authentication \"{auth}\" accepted on {env}",
