@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { createFileTracker } from './file.mjs';
+import { createFileTracker, ticketFileRefusal } from './file.mjs';
 
 function withRoot(fn) {
   const root = mkdtempSync(join(tmpdir(), 'ft-file-'));
@@ -53,3 +53,20 @@ test('searchWithMarker returns [] and getLinkedPullRequests null', async () => {
   assert.equal(tracker.normalizeKey('tickets/a b.md'), 'tickets/a b.md');
   assert.ok(tracker.keyPattern.test('anything'));
 });
+
+test('ticketFileRefusal accepts Markdown and text files only and refuses secret paths', () =>
+  withRoot(async (root) => {
+    assert.equal(ticketFileRefusal(root, 'notes.txt'), null);
+    assert.equal(ticketFileRefusal(root, 'a/b.MD'), null);
+    assert.equal(ticketFileRefusal(root, 'spec.markdown'), null);
+    assert.equal(ticketFileRefusal(root, 'data.json'), 'extension');
+    assert.equal(ticketFileRefusal(root, 'README'), 'extension');
+    assert.equal(ticketFileRefusal(root, '.env'), 'secret');
+    assert.equal(ticketFileRefusal(root, '.env.local.md'), 'secret');
+    assert.equal(ticketFileRefusal(root, '.auth/cache.md'), 'secret');
+    assert.equal(ticketFileRefusal(root, '.mcp.json'), 'secret');
+    writeFileSync(join(root, '.env'), 'A=b\n');
+    symlinkSync(join(root, '.env'), join(root, 'alias.md'));
+    assert.equal(ticketFileRefusal(root, 'alias.md'), 'secret');
+    await assert.rejects(createFileTracker(root).getIssue('alias.md'), /refused \(secret\)/);
+  }));

@@ -92,6 +92,8 @@
   "dossier.replayTextHint": "Raw text: ticket.mjs {key} --env {env} --replay-text > old.txt",
   "ticket.usage": "usage: ticket.mjs <key|url|path> [--env <name>] [--json | --replay-text]",
   "ticket.notFound": "ticket not found: {key}",
+  "ticket.refused.secret": "refused: {path} may hold secrets (.env*, .auth/, .mcp.json) and is never read as a ticket",
+  "ticket.refused.extension": "refused: {path} is not a ticket file (accepted: {extensions})",
   "cli.trackerError": "tracker error: {message}",
   "cli.noHost": "no host project found: run from a folder containing .claude/functional-test/config.json",
   "cli.missingSecrets": "missing environment variables: {variables}",

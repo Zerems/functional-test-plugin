@@ -4,7 +4,9 @@
 //                   delivery, replay, warnings
 //   --json          the dossier as JSON
 //   --replay-text   the latest [test-ticket] comment of the env, verbatim (nothing if none)
-// Exit codes: 0 ok; 2 usage, config, unknown env or ticket not found; 3 secrets missing;
+// A local ticket file must be .md, .markdown or .txt; .env*, .auth/ and .mcp.json are refused.
+// Values loaded from .env are redacted from the output.
+// Exit codes: 0 ok; 2 usage, config, unknown env, refused file or ticket not found; 3 secrets missing;
 // 4 tracker or network error; 1 anything else.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +16,8 @@ import { ConfigError, loadConfig } from './lib/config.mjs';
 import { translator } from './lib/i18n.mjs';
 import { UsageError, parseFlags, reportError } from './lib/cli.mjs';
 import { createTracker } from './lib/trackers/index.mjs';
-import { createFileTracker } from './lib/trackers/file.mjs';
+import { TICKET_FILE_EXTENSIONS, createFileTracker, ticketFileRefusal } from './lib/trackers/file.mjs';
+import { redactValues } from './lib/secrets.mjs';
 import { buildDossier, latestReplayText, renderDossier } from './lib/dossier.mjs';
 
 /** `{ input, envForced, json, replayText }` or throws UsageError. */
@@ -57,8 +60,11 @@ async function main(argv) {
     }
     throw error;
   }
-  loadEnv(root);
+  const loadedKeys = loadEnv(root);
   const t = translator(config.language);
+  // A ticket or a comment may quote a secret of .env: never print one.
+  const loadedValues = loadedKeys.map((name) => process.env[name]);
+  const redact = (text) => redactValues(text, [...loadedValues, ...loadedValues.map((v) => JSON.stringify(v).slice(1, -1))]);
 
   const { input, envForced } = options;
   if (envForced && !config.environments[envForced]) {
@@ -66,10 +72,19 @@ async function main(argv) {
     return 2;
   }
 
+  const fileMode = isExistingFile(root, input);
+  if (fileMode || config.tracker.type === 'file') {
+    const refusal = ticketFileRefusal(root, input);
+    if (refusal) {
+      process.stderr.write(`${t(`ticket.refused.${refusal}`, { path: input, extensions: TICKET_FILE_EXTENSIONS.join(', ') })}\n`);
+      return 2;
+    }
+  }
+
   let key = input;
   let tracker;
   try {
-    tracker = isExistingFile(root, input) ? createFileTracker(root) : await createTracker(config, process.env, { root });
+    tracker = fileMode ? createFileTracker(root) : await createTracker(config, process.env, { root });
     try {
       key = tracker.normalizeKey(input);
     } catch (error) {
@@ -79,17 +94,17 @@ async function main(argv) {
     const dossier = await buildDossier({ config, env: process.env, input, envForced, tracker, deps: { root, t } });
     if (options.replayText) {
       const text = latestReplayText(dossier.issue, dossier.envName);
-      if (text !== null) process.stdout.write(`${text}\n`);
+      if (text !== null) process.stdout.write(`${redact(text)}\n`);
     } else if (options.json) {
-      process.stdout.write(`${JSON.stringify(dossier, null, 2)}\n`);
+      process.stdout.write(`${redact(JSON.stringify(dossier, null, 2))}\n`);
     } else {
-      process.stdout.write(`${renderDossier(dossier, t)}\n`);
+      process.stdout.write(`${redact(renderDossier(dossier, t))}\n`);
     }
     return 0;
   } catch (error) {
     // A local ticket file that cannot be read is a usage problem, not a tracker one.
     if (tracker?.type === 'file') {
-      process.stderr.write(`${error.message}\n`);
+      process.stderr.write(`${redact(error.message)}\n`);
       return 2;
     }
     return reportError(error, t, { notFound: t('ticket.notFound', { key }), networkKey: 'cli.trackerError' });

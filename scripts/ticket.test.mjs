@@ -118,3 +118,46 @@ test('ticket.mjs maps tracker answers to exit codes: 404 → 2, 500 → 4, unrea
     host.cleanup();
   }
 });
+
+test('ticket.mjs refuses secret files and non-ticket extensions without echoing their content', async () => {
+  for (const config of [fileConfig, example]) {
+    const host = makeHost(config);
+    try {
+      const secret = 'super-secret-value-123';
+      fs.writeFileSync(path.join(host.dir, '.env'), `JIRA_API_TOKEN=${secret}\n`);
+      fs.writeFileSync(path.join(host.dir, '.env.local'), `OTHER=${secret}\n`);
+      fs.mkdirSync(path.join(host.dir, '.auth'));
+      fs.writeFileSync(path.join(host.dir, '.auth', 'token.md'), `# ${secret}\n`);
+      fs.writeFileSync(path.join(host.dir, '.mcp.json'), JSON.stringify({ token: secret }));
+      fs.writeFileSync(path.join(host.dir, 'data.json'), JSON.stringify({ token: secret }));
+      fs.symlinkSync(path.join(host.dir, '.env'), path.join(host.dir, 'alias.md'));
+      for (const input of ['.env', './.env.local', '.auth/token.md', '.mcp.json', 'data.json', 'alias.md']) {
+        const { code, stdout, stderr } = await run(host.dir, [input]);
+        assert.equal(code, 2, `${input}: ${stderr}`);
+        assert.ok(!stdout.includes(secret) && !stderr.includes(secret), input);
+        assert.match(stderr, /refused/, input);
+      }
+    } finally {
+      host.cleanup();
+    }
+  }
+});
+
+test('ticket.mjs reads a .txt ticket and redacts the values loaded from .env', async () => {
+  const host = makeHost(fileConfig);
+  try {
+    const secret = 'leaked-into-ticket-42';
+    fs.writeFileSync(path.join(host.dir, '.env'), `APP_PASSWORD=${secret}\n`);
+    fs.writeFileSync(path.join(host.dir, 'notes.txt'), `# Notes\n\n## Acceptance criteria\n\n- Log in with ${secret}\n`);
+    const { code, stdout, stderr } = await run(host.dir, ['notes.txt']);
+    assert.equal(code, 0, stderr);
+    assert.match(stdout, /^# notes — Notes$/m);
+    assert.ok(!stdout.includes(secret));
+    assert.match(stdout, /Log in with \*\*\*/);
+    const json = await run(host.dir, ['notes.txt', '--json']);
+    assert.equal(json.code, 0, json.stderr);
+    assert.ok(!json.stdout.includes(secret));
+  } finally {
+    host.cleanup();
+  }
+});

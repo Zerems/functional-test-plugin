@@ -92,6 +92,8 @@
   "dossier.replayTextHint": "Texte brut : ticket.mjs {key} --env {env} --replay-text > ancien.txt",
   "ticket.usage": "usage : ticket.mjs <clé|url|chemin> [--env <nom>] [--json | --replay-text]",
   "ticket.notFound": "ticket introuvable : {key}",
+  "ticket.refused.secret": "refusé : {path} peut contenir des secrets (.env*, .auth/, .mcp.json) et n’est jamais lu comme un ticket",
+  "ticket.refused.extension": "refusé : {path} n’est pas un fichier de ticket (acceptés : {extensions})",
   "cli.trackerError": "tracker en erreur : {message}",
   "cli.noHost": "aucun projet hôte trouvé : lancer depuis un dossier contenant .claude/functional-test/config.json",
   "cli.missingSecrets": "variables d’environnement manquantes : {variables}",

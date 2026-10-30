@@ -20,7 +20,8 @@ function readJson(file) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (error) {
-    return fail(`cannot read JSON from ${file}: ${error.message}`, 2);
+    // Never error.message: V8 quotes the start of the file, which may hold a secret.
+    return fail(`cannot read JSON from ${file}: ${error.code ?? 'invalid JSON'}`, 2);
   }
 }
 
