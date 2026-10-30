@@ -43,6 +43,13 @@ Code marketplace, so anyone can install it.
 - G6. A `setup` command that interviews the user, writes the host files, and runs the
   preflight. Re-runnable, never destructive.
 - G7. No npm dependency in the plugin. Node.js ≥ 20 is the only runtime requirement.
+- G9. The browser is driven through a **browser MCP server declared in the config**.
+  Playwright MCP is the built-in reference driver; Cypress and Robot Framework MCP servers
+  (community projects, see 4.4) are supported as drivers with their own tool mapping, and
+  any other browser MCP can be declared with a custom mapping. The **automation
+  framework** the host writes its tests in (Playwright, Cypress, Robot Framework, other)
+  is also configured: `automation-candidates` proposes, writes and runs tests in that
+  framework, through a test MCP server when the host has one.
 - G8. `wizim-e2e` becomes the first consumer and keeps its current behaviour, including
   French output and its existing `[test-ticket]` comments on Jira.
 
@@ -79,7 +86,12 @@ Code marketplace, so anyone can install it.
 - No `node_modules`: `.env` parsing, HTML/Markdown conversion, HTTP calls use Node built-ins.
 - Claude must never read `.env`, `.auth/` or the MCP config: scripts load secrets
   themselves and mask them in any output.
-- Browser automation goes through the Playwright MCP server (`browser_*` tools), as today.
+- Browser automation goes through an MCP server, as today (Playwright MCP `browser_*`
+  tools in `wizim-e2e`). On 2026-10-30 no **official** Cypress or Robot Framework MCP
+  server exists; community ones do (`cypress-mcp` on npm; `robotframework-mcp` by
+  SourceFuse and `rf-mcp` on PyPI). The design therefore never depends on one specific
+  server: drivers are tool mappings (4.4), and the builder verifies the community servers'
+  actual tool names before shipping their mapping.
 - The plugin repository, its code, comments, docs and skill instructions are in English.
   The user-facing output follows the configured language.
 
@@ -92,6 +104,8 @@ functional-test-plugin/                     (GitHub: Zerems/functional-test-plug
   skills/
     test-ticket/SKILL.md                    the 6-step workflow (engine instructions)
     test-ticket/references/                 test-design rules (ISTQB), report templates, tracker notes
+    test-ticket/references/browser-drivers/ one tool-mapping file per browser MCP: playwright-mcp.md (reference),
+                                            cypress-mcp.md, robotframework-mcp.md (community, version-pinned), template.md (custom)
     automation-candidates/SKILL.md          formerly a-automatiser
     setup/SKILL.md                          interview → host files → preflight
   scripts/                                  entry points: preflight, ticket, api, session, comment, candidates, setup-write
@@ -131,7 +145,10 @@ root, so in practice this is immediate; walking up makes worktrees and sub-folde
   (front, bo, api… declared in config) replace the hard-coded Wizim channels. Pitfalls come
   from the host's pitfalls file. The plan is written in the configured language.
 - Step 4 executes through the `api` script (authentication delegated to the auth adapter)
-  and the `browser_*` MCP tools after the `session` script confirmed a connected browser.
+  and the browser MCP tools of the configured driver (4.4) after the `session` script
+  confirmed a connected browser. The SKILL.md describes browser actions abstractly
+  (open a URL, read the page, click, type, take a screenshot) and the driver's mapping
+  file says which MCP tool performs each one.
 - Step 5 writes `report.json` in the scratchpad, then the `comment` script formats it in
   the configured language, with the stable machine-readable block (4.5).
 - Step 6 "pitfall discovered" is unchanged: reported, never written to the pitfalls file
@@ -142,9 +159,18 @@ root, so in practice this is immediate; walking up makes worktrees and sub-folde
 detection is configured (paths to grep, branch pattern). Arbitration:
 
 - "automate T2 and T3 of KEY": read the ticket and comment, create the configured branch,
-  then follow the host project's own test-writing instructions. The config points to them
-  (`automation.howToWriteTests`: a path to a Markdown file such as the host's `CLAUDE.md`
-  or a dedicated guide, optionally the names of agents to use). The plugin ships no agent.
+  then write the test in the configured **framework** (`automation.framework`:
+  `playwright`, `cypress`, `robotframework` or `other`), following the host project's own
+  test-writing instructions. The config points to them (`automation.howToWriteTests`: a
+  path to a Markdown file such as the host's `CLAUDE.md` or a dedicated guide, optionally
+  the names of agents to use). The skill explores the behaviour with the browser MCP
+  driver, writes the spec, then runs it until green through the host's **test MCP
+  server** when one is declared (`automation.testMcpServer`: Playwright's
+  `run-test-mcp-server` as used in `wizim-e2e`, or a Cypress / Robot Framework MCP that
+  can run a spec) or else through `automation.runCommand` (`npx playwright test {file}`,
+  `npx cypress run --spec {file}`, `robot {file}`). The plugin ships no agent and no
+  framework; it ships one short "framework notes" reference per supported framework
+  (file layout, naming, how the ticket key is cited so coverage detection finds it).
 - "exclude KEY: reason": append to the exclusions file, show the diff, commit on request.
 - "later": do nothing.
 
@@ -193,6 +219,12 @@ finalises the schema and validates it in preflight with clear error messages):
       { "name": "wizim-interim", "channel": "mobile" }   // mobile: "not testable by this skill"
     ]
   },
+  "browser": {
+    "driver": "playwright-mcp",                    // playwright-mcp (reference) | cypress-mcp | robotframework-mcp | custom
+    "driverMapping": null,                         // custom: path to the host's tool-mapping file (see 4.4)
+    "engine": "msedge",                            // chromium (default) | msedge | chrome | firefox | webkit, when the driver supports it
+    "viewport": "1440x900"
+  },
   "sessions": {                                    // one MCP server per session name, shared by all environments (see 4.4)
     "front": { "mode": "persistent-profile", "mcpServer": "playwright" },
     "bo":    { "mode": "storage-state", "mcpServer": "playwright-bo", "file": ".auth/bo.json",
@@ -206,10 +238,13 @@ finalises the schema and validates it in preflight with clear error messages):
   "testData": { "prefix": "[E2E]", "emailDomains": ["e2e.wizim.test", "yopmail.com"] },
   "pitfallsFile": ".claude/functional-test/pitfalls.md",
   "automation": {
-    "specPaths": ["tests/"],                       // git grep -w <key> in these paths ⇒ covered
+    "framework": "playwright",                     // playwright | cypress | robotframework | other
+    "specPaths": ["tests/"],                       // git grep -w <key> here ⇒ covered (defaults per framework: tests/, cypress/e2e/, tests/ *.robot)
     "branchPattern": "test/{key-lower}-{slug}",    // existing branch matching ⇒ covered
     "excludedFile": ".claude/functional-test/excluded.json",
-    "howToWriteTests": "CLAUDE.md"                 // what the skill reads before writing a test
+    "howToWriteTests": "CLAUDE.md",                // what the skill reads before writing a test
+    "testMcpServer": "playwright-test",            // optional: MCP server that runs/debugs the written test
+    "runCommand": "npx playwright test {file}"     // fallback when no test MCP server; default per framework
   }
 }
 ```
@@ -308,9 +343,28 @@ Presets: `password-login` (POST JSON `{username,password}` to `loginPath`, reads
 <name>`, `--credentials <file>` for an alternate account, `--body`, exit code 5 on 5xx,
 masked bodies, token cache per env/auth/account.
 
-### 4.4 Browser sessions
+### 4.4 Browser driver and sessions
 
-The skill needs a browser that is already logged in. A **session name** (`front`, `bo`…)
+**Driver.** The skill never names MCP tools directly. It reasons in six abstract browser
+actions (open URL, read page, click, type, press key, screenshot) plus "detect a login
+page", and a **driver mapping file** says which tool of the configured MCP server
+performs each one, with any argument conventions. Built-in mappings:
+
+| Driver | MCP server | Status | Sessions supported |
+|---|---|---|---|
+| `playwright-mcp` | `@playwright/mcp` (`browser_navigate`, `browser_snapshot`, `browser_click`…) | reference, fully supported | `persistent-profile`, `storage-state` |
+| `cypress-mcp` | community `cypress-mcp` (npm) | supported if its tool set covers the six actions; version pinned in the mapping | `external` |
+| `robotframework-mcp` | community `robotframework-mcp` (SourceFuse) or `rf-mcp` (PyPI), Browser/Selenium library underneath | same rule | `external` |
+| `custom` | any | host provides the mapping file (`browser.driverMapping`, from `template.md`) | declared in the mapping |
+
+The builder verifies each community server's actual tools before shipping its mapping;
+a server that cannot perform one of the six actions is documented as partial, and the
+skill treats the channels it cannot drive as "not playable" rather than failing. Setup
+offers the driver list, writes the matching `.mcp.json` entries (the community servers'
+install commands come from the mapping files), and the preflight checks that the chosen
+driver's server is declared.
+
+**Sessions.** The skill needs a browser that is already logged in. A **session name** (`front`, `bo`…)
 maps to exactly **one MCP server entry** in `.mcp.json`, named by `mcpServer`, shared by
 all environments: an MCP entry is static, and browser cookies are per host, so one
 profile or one storage-state file can hold sessions for `testing` and `demo` at once
@@ -318,9 +372,12 @@ profile or one storage-state file can hold sessions for `testing` and `demo` at 
 Claude picks the tools of that server (`mcp__<mcpServer>__browser_*`) for every channel
 that declares this session; the `session` script prints the server name to use.
 
-Two modes per session name:
+Three modes per session name:
 
-- `persistent-profile` (default, zero code): the MCP server is started with a persistent
+- `external` (only mode for non-Playwright drivers): the MCP server or the framework
+  manages authentication itself (Cypress `cy.session`, Robot Framework keywords); the
+  `session` script only reports the server name, and the login check below applies.
+- `persistent-profile` (default for `playwright-mcp`, zero code): the MCP server is started with a persistent
   `--user-data-dir` under `.auth/profiles/<session>/`. No script can open the browser or
   read the login state of a Chromium profile (the plugin bundles no Playwright, cookies are
   encrypted), so the `session` script only ensures the directory exists and reports the
@@ -371,8 +428,9 @@ derived from the config, never from a fixed list:
 4. Repositories present under `repositoriesDir` when `delivery.mode` uses git log
    (missing → blocked in `git-log`, warning in `both`).
 5. For each `api` channel of the target environment: authentication succeeds.
-6. `.mcp.json` declares a Playwright MCP server for each session name used by the
-   environment's channels (profile dir or storage-state path matches).
+6. `.mcp.json` declares the configured browser driver's MCP server for each session
+   name used by the environment's channels (profile dir or storage-state path matches
+   for Playwright), and the `automation.testMcpServer` when one is configured.
 7. `.gitignore` covers `.env` and `.auth/` (warning).
 
 The MCP tools' actual presence in the Claude session cannot be checked by a script; the
@@ -389,12 +447,14 @@ defaults shown:
 3. Environments: name, deployed branch, channels with URLs; which is the default and any
    per-project default.
 4. Delivery: where application repositories live and which channel each one is.
-5. Sessions: for each channel with a UI, persistent profile (default) or an existing
-   storage-state command.
+5. Browser driver (Playwright MCP default, Cypress MCP, Robot Framework MCP, custom), then
+   sessions: for each channel with a UI, persistent profile (default), an existing
+   storage-state command, or external.
 6. API authentication: preset per API channel, variable names.
 7. Test data prefix and e-mail domains.
-8. Where automated tests live (spec paths, branch pattern) and what to read before
-   writing one.
+8. Automation framework (Playwright, Cypress, Robot Framework, other), where automated
+   tests live (spec paths, branch pattern), what to read before writing one, and how to
+   run one (test MCP server or command).
 
 Then it writes `config.json`, a `pitfalls.md` skeleton (sections, no content), an empty
 `excluded.json`, a documented block appended to `.env.example`, merged `.mcp.json`
@@ -456,6 +516,8 @@ release, but it is the acceptance test of the plugin and must be run before v1 i
 | Persistent-profile login | checked by Claude via `browser_navigate` before the plan; human logs in on demand | script-driven login check (impossible without bundling Playwright) |
 | GitHub status | label matched against configured status lists, else open/closed | GitHub Projects columns (GraphQL, v2 scope) |
 | Candidate search | marker-only search, client-side filter, ticket-by-ticket reads, no cache | localised-label search; local cache file |
+| Browser driver | abstract actions + mapping file per MCP server; Playwright reference, Cypress and Robot Framework community mappings, custom | Playwright MCP hard-coded |
+| Automation framework | configured (`playwright`, `cypress`, `robotframework`, `other`), test MCP server optional, run command fallback | Playwright-only test writing |
 | Licence | MIT | — |
 
 ## 7. Left to the builder
@@ -469,3 +531,6 @@ release, but it is the acceptance test of the plugin and must be run before v1 i
   end-to-end script tests), versioning and release tagging, `marketplace.json` fields.
 - README quickstart, adapters guide, config reference, migration guide.
 - Layout of `.auth/` (profiles, token caches) and the cache-key hashing.
+- Verification of the community Cypress and Robot Framework MCP servers (tool names,
+  install command, pinned version), the content of their mapping files, and the
+  "framework notes" for Cypress and Robot Framework.
