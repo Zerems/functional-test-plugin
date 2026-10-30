@@ -1,0 +1,48 @@
+{
+  "detail": [
+    {
+      "pullRequests": [
+        {
+          "id": "1",
+          "name": "Backend change",
+          "status": "MERGED",
+          "source": { "branch": "feat/x", "url": "" },
+          "destination": { "branch": "testing", "url": "" },
+          "lastUpdate": "2026-10-09T14:31:01.834+0000",
+          "repositoryName": "wizimadmin/wizim-backend-v2",
+          "url": "https://bitbucket.org/x/y/pull-requests/1"
+        },
+        {
+          "id": "2",
+          "name": "Front change",
+          "status": "OPEN",
+          "source": { "branch": "feat/y", "url": "" },
+          "destination": { "branch": "testing", "url": "" },
+          "lastUpdate": "2026-10-10T08:00:00.000+0000",
+          "repositoryName": "wizimadmin/wizim-front-v2",
+          "url": "https://bitbucket.org/x/z/pull-requests/2"
+        },
+        {
+          "id": "3",
+          "name": "Superseded change",
+          "status": "SUPERSEDED",
+          "source": { "branch": "feat/z", "url": "" },
+          "destination": { "branch": "testing", "url": "" },
+          "lastUpdate": "2026-10-11T08:00:00.000+0000",
+          "repositoryName": "wizimadmin/wizim-api",
+          "url": "https://bitbucket.org/x/w/pull-requests/3"
+        },
+        {
+          "id": "4",
+          "name": "E2E change",
+          "status": "MERGED",
+          "source": { "branch": "feat/e", "url": "" },
+          "destination": { "branch": "main", "url": "" },
+          "lastUpdate": "2026-10-12T08:00:00.000+0000",
+          "repositoryName": "wizimadmin/wizim-e2e",
+          "url": "https://bitbucket.org/x/e/pull-requests/4"
+        }
+      ]
+    }
+  ]
+}

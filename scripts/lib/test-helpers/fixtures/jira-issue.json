@@ -1,0 +1,22 @@
+{
+  "id": "10001",
+  "key": "WV-90",
+  "fields": {
+    "summary": "Commande CDI",
+    "status": { "name": "Test" },
+    "issuetype": { "name": "Story" },
+    "labels": ["cdi"],
+    "parent": { "key": "WV-1", "fields": { "summary": "Épopée commandes" } },
+    "issuelinks": [
+      { "type": { "outward": "blocks", "inward": "is blocked by" }, "inwardIssue": { "key": "WV-5", "fields": { "summary": "Référentiel" } } },
+      { "type": { "outward": "relates to", "inward": "relates to" }, "outwardIssue": { "key": "WVS-9", "fields": { "summary": "Bug" } } }
+    ],
+    "comment": {
+      "comments": [{ "author": { "displayName": "Remy" }, "created": "2026-10-20T10:00:00.000+0000", "body": {} }]
+    }
+  },
+  "renderedFields": {
+    "description": "<p>Intention</p><ul><li>CA un</li><li><del>CA deux</del></li></ul>",
+    "comment": { "comments": [{ "body": "<p>[test-ticket] Functional tests - testing - 2026-10-20 10:00 - Verdict: OK</p>" }] }
+  }
+}
