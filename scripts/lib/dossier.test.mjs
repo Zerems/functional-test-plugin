@@ -77,13 +77,13 @@ const report = (over = {}) => ({
 });
 
 test('buildDossier deduces env from key and marks forced', async () => {
-  const deduced = await build({ input: 'wvs-3', tracker: fakeTracker({ issue: makeIssue({ key: 'WVS-3' }), prs: [mergedPr({ targetBranch: 'demo' })] }) });
+  const deduced = await build({ input: 'prjs-3', tracker: fakeTracker({ issue: makeIssue({ key: 'PRJS-3' }), prs: [mergedPr({ targetBranch: 'demo' })] }) });
   assert.equal(deduced.envName, 'demo');
   assert.equal(deduced.envDefault, 'demo');
   assert.equal(deduced.envForced, false);
   assert.deepEqual(deduced.warnings, []);
 
-  const forced = await build({ input: 'wvs-3', envForced: 'testing', tracker: fakeTracker({ issue: makeIssue({ key: 'WVS-3' }) }) });
+  const forced = await build({ input: 'prjs-3', envForced: 'testing', tracker: fakeTracker({ issue: makeIssue({ key: 'PRJS-3' }) }) });
   assert.equal(forced.envName, 'testing');
   assert.equal(forced.envDefault, 'demo');
   assert.equal(forced.envForced, true);

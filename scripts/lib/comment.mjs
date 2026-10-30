@@ -109,7 +109,7 @@ export function parseComment(text) {
   return parseDataLine(lines) ?? parseLegacyLines(lines);
 }
 
-// --- legacy French format (wizim-e2e `/test-ticket`, before the data line) ---
+// --- legacy French format (the reference implementation's `/test-ticket`, before the data line) ---
 
 const LEGACY_FAILURE = 'Échec : ';
 const LEGACY_CAUSE = 'Cause : ';

@@ -34,7 +34,7 @@ test('normalizeIssue maps the raw Jira issue to an Issue with html bodies', () =
   });
   assert.deepEqual(issue.comments, [
     {
-      author: 'Remy',
+      author: 'Alice',
       date: '2026-10-20T10:00:00.000+0000',
       body: { format: 'html', content: '<p>[test-ticket] Functional tests - testing - 2026-10-20 10:00 - Verdict: OK</p>' },
     },
@@ -57,9 +57,9 @@ test('normalizeIssue tolerates a bare issue', () => {
 
 test('normalizePullRequests maps fields and statuses and keeps every repository', () => {
   const prs = normalizePullRequests(devStatusFixture);
-  assert.deepEqual(prs.map((p) => p.repository), ['wizim-backend-v2', 'wizim-front-v2', 'wizim-api', 'wizim-e2e']);
+  assert.deepEqual(prs.map((p) => p.repository), ['backend-api', 'front-app', 'legacy-api', 'e2e-tests']);
   assert.deepEqual(prs[0], {
-    repository: 'wizim-backend-v2',
+    repository: 'backend-api',
     title: 'Backend change',
     sourceBranch: 'feat/x',
     targetBranch: 'testing',
@@ -174,8 +174,8 @@ test('getLinkedPullRequests keeps the host repository and tries application type
     { match: (u) => u.includes('applicationType=bitbucket'), body: { detail: [] } },
     { match: (u) => u.includes('applicationType=GitHub'), body: devStatusFixture },
   ]);
-  const prs = await create(fetchImpl, '/work/wizim-e2e').getLinkedPullRequests({ id: '10001', key: 'WV-90' });
-  assert.deepEqual(prs.map((p) => p.repository), ['wizim-backend-v2', 'wizim-front-v2', 'wizim-api', 'wizim-e2e']);
+  const prs = await create(fetchImpl, '/work/e2e-tests').getLinkedPullRequests({ id: '10001', key: 'WV-90' });
+  assert.deepEqual(prs.map((p) => p.repository), ['backend-api', 'front-app', 'legacy-api', 'e2e-tests']);
   assert.deepEqual(
     fetchImpl.calls.map((c) => new URL(c.url).searchParams.get('applicationType')),
     ['bitbucket', 'GitHub'],
@@ -214,6 +214,6 @@ test('getLinkedPullRequests returns [] when no application type has a pull reque
 });
 
 test('whoami returns the display name', async () => {
-  const fetchImpl = fakeFetch([{ match: (u) => u.endsWith('/rest/api/3/myself'), body: { displayName: 'Remy A' } }]);
-  assert.equal(await create(fetchImpl).whoami(), 'Remy A');
+  const fetchImpl = fakeFetch([{ match: (u) => u.endsWith('/rest/api/3/myself'), body: { displayName: 'Alice A' } }]);
+  assert.equal(await create(fetchImpl).whoami(), 'Alice A');
 });

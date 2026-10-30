@@ -4,13 +4,13 @@
   "tracker": {
     "type": "jira",
     "baseUrl": "https://tracker.example.com",
-    "projects": ["WV", "WVS"],
+    "projects": ["PRJ", "PRJS"],
     "statuses": {
       "toTest": ["Test"],
       "doNotTest": ["Pas un bug", "Besoin story", "En attente d'infos"],
       "afterOk": "Test OK",
       "afterKo": "Test KO",
-      "perProject": { "WVS": { "afterOk": "Test Ok" } }
+      "perProject": { "PRJS": { "afterOk": "Test Ok" } }
     }
   },
   "environments": {
@@ -31,7 +31,7 @@
       }
     }
   },
-  "defaultEnvironment": { "fallback": "testing", "byProject": { "WVS": "demo" } },
+  "defaultEnvironment": { "fallback": "testing", "byProject": { "PRJS": "demo" } },
   "delivery": {
     "mode": "git-log",
     "recentMinutes": 60,

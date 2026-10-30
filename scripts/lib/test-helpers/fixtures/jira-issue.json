@@ -12,7 +12,7 @@
       { "type": { "outward": "relates to", "inward": "relates to" }, "outwardIssue": { "key": "WVS-9", "fields": { "summary": "Bug" } } }
     ],
     "comment": {
-      "comments": [{ "author": { "displayName": "Remy" }, "created": "2026-10-20T10:00:00.000+0000", "body": {} }]
+      "comments": [{ "author": { "displayName": "Alice" }, "created": "2026-10-20T10:00:00.000+0000", "body": {} }]
     }
   },
   "renderedFields": {

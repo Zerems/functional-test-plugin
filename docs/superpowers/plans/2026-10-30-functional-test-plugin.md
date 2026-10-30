@@ -10,9 +10,9 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-30-functional-test-plugin-design.md`
 
-**Reference implementation (read-only):** `/Users/Remy/Documents/Wizim/wizim-e2e/.claude/skills/test-ticket/` and `a-automatiser/`. Several modules are ports of its `scripts/lib/*.mjs`; the plan says "port of X" when so. Never modify that repository.
+**Reference implementation (read-only, private):** the `test-ticket` and `a-automatiser` skills. Several modules are ports of its `scripts/lib/*.mjs`; the plan says "port of X" when so. Never modify that repository.
 
-**Never in scope:** `wizim-e2e` is not modified and the plugin is not installed in it (spec §5). The acceptance check of spec §5 is a manual run by the author on a throwaway host folder after `0.1.0`, outside this plan.
+**Never in scope:** the reference repository is not modified and the plugin is not installed in it (spec §5). The acceptance check of spec §5 is a manual run by the author on a throwaway host folder after `0.1.0`, outside this plan.
 
 ## Global Constraints
 
@@ -49,7 +49,7 @@ LICENSE                                MIT
 README.md                              quickstart (Task 17)
 CHANGELOG.md
 locales/en.json, locales/fr.json       flat key → string, {param} placeholders
-templates/config.example.json          full example config (Wizim-shaped, anonymised)
+templates/config.example.json          full example config (shaped like the reference implementation, anonymised)
 templates/pitfalls.md                  skeleton with section headings
 templates/excluded.json                []
 templates/mcp/playwright-mcp.json      MCP entry templates per driver ({{profileDir}}, {{storageState}}, {{engine}}, {{viewport}})
@@ -90,7 +90,7 @@ skills/test-ticket/references/browser-drivers/{playwright-mcp,cypress-mcp,robotf
 skills/test-ticket/references/frameworks/{playwright,cypress,robotframework}.md
 skills/automation-candidates/SKILL.md
 skills/setup/SKILL.md
-docs/config-reference.md, docs/adapters.md, docs/migration-from-wizim-e2e.md
+docs/config-reference.md, docs/adapters.md, docs/migration-guide.md
 ```
 
 ---
@@ -109,10 +109,10 @@ docs/config-reference.md, docs/adapters.md, docs/migration-from-wizim-e2e.md
 
 - [ ] **Step 1: Write the manifests**
 
-`plugin.json`: `{ "name": "functional-test", "version": "0.1.0", "description": "Functional testing of delivered tickets from Claude Code: plan, execute, verdict, comment; QA arbitration of automation candidates.", "author": { "name": "Rémy Albinet" }, "repository": "https://github.com/Zerems/functional-test-plugin", "license": "MIT", "keywords": ["qa", "testing", "jira", "github", "playwright"] }`.
-`marketplace.json`: `{ "name": "zerems-plugins", "owner": { "name": "Rémy Albinet" }, "metadata": { "description": "Rémy Albinet's Claude Code plugins", "version": "0.1.0" }, "plugins": [{ "name": "functional-test", "source": "./", "description": "<same as plugin.json>", "version": "0.1.0" }] }`.
+`plugin.json`: `{ "name": "functional-test", "version": "0.1.0", "description": "Functional testing of delivered tickets from Claude Code: plan, execute, verdict, comment; QA arbitration of automation candidates.", "author": { "name": "<author name>" }, "repository": "https://github.com/Zerems/functional-test-plugin", "license": "MIT", "keywords": ["qa", "testing", "jira", "github", "playwright"] }`.
+`marketplace.json`: `{ "name": "zerems-plugins", "owner": { "name": "<author name>" }, "metadata": { "description": "<author name>'s Claude Code plugins", "version": "0.1.0" }, "plugins": [{ "name": "functional-test", "source": "./", "description": "<same as plugin.json>", "version": "0.1.0" }] }`.
 `package.json`: `{ "name": "functional-test-plugin", "version": "0.1.0", "private": true, "type": "module", "engines": { "node": ">=20" }, "scripts": { "test": "node --test" } }`.
-`.gitignore`: `node_modules/`, `.DS_Store`. `LICENSE`: MIT, 2026, Rémy Albinet. `CHANGELOG.md`: `## 0.1.0 (unreleased)`.
+`.gitignore`: `node_modules/`, `.DS_Store`. `LICENSE`: MIT, 2026, the author. `CHANGELOG.md`: `## 0.1.0 (unreleased)`.
 
 - [ ] **Step 2: Write the failing tests**
 
@@ -165,11 +165,11 @@ git add -A && git commit -m "feat: plugin skeleton, host root discovery and dote
 
 - [ ] **Step 1: Write locales**
 
-`en.json` and `fr.json` with these keys (exact English copy; French translations mirror today's wizim-e2e wording): `verdict.OK`, `verdict.KO`, `verdict.INCONCLUSIVE` ("INCONCLUSIVE" / "NON CONCLUANT"), `result.OK`, `result.KO`, `result.UNSTABLE` ("UNSTABLE" / "INSTABLE"), `comment.title` ("Functional tests" / "Tests fonctionnels"), `comment.verdict` ("Verdict"), `comment.failure` ("Failure" / "Échec"), `comment.cause` ("Cause"), `comment.delivery` ("Delivery" / "Livraison"), `comment.constraints` ("Developer constraints" / "Contraintes du dev"), `comment.cases` ("Cases played" / "Cas joués"), `comment.notPlayed` ("Not played" / "Non joués"), `comment.data` ("Data created" / "Données créées"), `comment.candidates` ("Automation candidates (QA to arbitrate)" / "Candidats à l'automatisation (à arbitrer par QA)"), `comment.pitfall` ("Pitfall discovered" / "Piège découvert"), `comment.none` ("none" / "aucun"), `comment.noneF` ("none" / "aucune"), `preflight.ready` ("--- ready" / "--- prêt"), `preflight.blocked` ("--- blocked" / "--- bloqué"), `preflight.ok` ("OK"), `preflight.ko` ("KO"), `preflight.warn` ("WARNING" / "AVERTISSEMENT"), and one key per preflight line and per ticket-dossier heading added in Tasks 8 and 11 (those tasks list theirs).
+`en.json` and `fr.json` with these keys (exact English copy; French translations mirror today's wording of the reference implementation): `verdict.OK`, `verdict.KO`, `verdict.INCONCLUSIVE` ("INCONCLUSIVE" / "NON CONCLUANT"), `result.OK`, `result.KO`, `result.UNSTABLE` ("UNSTABLE" / "INSTABLE"), `comment.title` ("Functional tests" / "Tests fonctionnels"), `comment.verdict` ("Verdict"), `comment.failure` ("Failure" / "Échec"), `comment.cause` ("Cause"), `comment.delivery` ("Delivery" / "Livraison"), `comment.constraints` ("Developer constraints" / "Contraintes du dev"), `comment.cases` ("Cases played" / "Cas joués"), `comment.notPlayed` ("Not played" / "Non joués"), `comment.data` ("Data created" / "Données créées"), `comment.candidates` ("Automation candidates (QA to arbitrate)" / "Candidats à l'automatisation (à arbitrer par QA)"), `comment.pitfall` ("Pitfall discovered" / "Piège découvert"), `comment.none` ("none" / "aucun"), `comment.noneF` ("none" / "aucune"), `preflight.ready` ("--- ready" / "--- prêt"), `preflight.blocked` ("--- blocked" / "--- bloqué"), `preflight.ok` ("OK"), `preflight.ko` ("KO"), `preflight.warn` ("WARNING" / "AVERTISSEMENT"), and one key per preflight line and per ticket-dossier heading added in Tasks 8 and 11 (those tasks list theirs).
 
 - [ ] **Step 2: Write the failing tests**
 
-`config.test.mjs` (fixture: `templates/config.example.json`, a Wizim-shaped example with `language: "fr"`, jira, two environments `testing`/`demo` with channels front/bo/api, five repositories, sessions front (persistent-profile, `playwright`) and bo (storage-state, `playwright-bo`), auth `agency` password-login, automation playwright with `testMcpServer: "playwright-test"`):
+`config.test.mjs` (fixture: `templates/config.example.json`, an example shaped like the reference implementation with `language: "fr"`, jira, two environments `testing`/`demo` with channels front/bo/api, five repositories, sessions front (persistent-profile, `playwright`) and bo (storage-state, `playwright-bo`), auth `agency` password-login, automation playwright with `testMcpServer: "playwright-test"`):
 - `applyDefaults fills language, delivery mode, browser and automation defaults` (minimal github config → `language 'en'`, `delivery.mode 'both'`, `automation.specPaths ['tests/']`, `sessions.front.mode 'persistent-profile'`)
 - `applyDefaults picks delivery none and external sessions for file tracker + cypress driver`
 - `validateConfig returns [] for the example config`
@@ -238,7 +238,7 @@ Tracker credential variable names by type: jira → `JIRA_EMAIL`, `JIRA_API_TOKE
 - `formatComment in fr reproduces today's header "[test-ticket] Tests fonctionnels — testing — 2026-10-30 14:05 — Verdict : KO"` and the `Échec :` line before `Livraison :`
 - `formatComment in en uses English labels and ends with the data line`
 - `parseComment reads the data line regardless of the human language` (format in fr → parse → deep-equal report)
-- `parseComment falls back to the legacy French format` (fixture: a current wizim-e2e comment → verdict `INCONCLUSIVE`, result `UNSTABLE` mapped)
+- `parseComment falls back to the legacy French format` (fixture: a current comment of the reference implementation → verdict `INCONCLUSIVE`, result `UNSTABLE` mapped)
 - `parseComment returns null for a non test-ticket text`
 - `parseComment with a corrupt data line falls back to legacy and never throws` (Review Focus 3: legacy header present + `[test-ticket:data] {not json`)
 - `latestReports keeps only the env and sorts newest first`
@@ -434,7 +434,7 @@ Tracker credential variable names by type: jira → `JIRA_EMAIL`, `JIRA_API_TOKE
   - Step 4 execution: `session.mjs` per session, browser actions through the driver mapping, `api.mjs` with `--header` for context, eventual consistency loop (30 s, 10 × 3 s), UNSTABLE rule, proofs, early stop.
   - Step 5 verdict rules, `report.json` fields (Task 4 `Report`), `comment.mjs format` and `diff`, restitution per `report-templates.md`, "what's left to the dev" using `statuses.afterOk/afterKo` of the project.
   - Step 6 pitfall discovered → report only.
-- [ ] **Step 2: Write `test-design-rules.md`** — translation of `techniques-de-test.md` with neutral examples (an order with contract types, a paginated list with a cap, a document lifecycle), no Wizim names.
+- [ ] **Step 2: Write `test-design-rules.md`** — translation of `techniques-de-test.md` with neutral examples (an order with contract types, a paginated list with a cap, a document lifecycle), no reference-implementation names.
 - [ ] **Step 3: Write `report-templates.md`** — chat report template and comment description (spec §4.5), English copy; note that labels follow the configured language.
 - [ ] **Step 4: Write `tracker-notes.md`** — Jira (statuses, `renderedFields`), GitHub (labels as statuses, timeline PRs, search limits), file mode limits.
 - [ ] **Step 5: Write driver mappings** — `playwright-mcp.md`: table action → tool (`open URL → browser_navigate`, `read page → browser_snapshot`, `click → browser_click`, `type → browser_type`, `press key → browser_press_key`, `screenshot → browser_take_screenshot`, `close → browser_close` after a storage-state refresh; login detection = URL or snapshot shows a login form), server package `@playwright/mcp@<pinned>`. `cypress-mcp.md` and `robotframework-mcp.md`: same table filled from the verified servers, with "Status: community, verified on <date>, version <x>" and the unsupported actions listed; `template.md`: empty table with instructions.

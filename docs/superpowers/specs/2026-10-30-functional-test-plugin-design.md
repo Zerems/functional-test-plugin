@@ -2,18 +2,18 @@
 
 Date: 2026-10-30
 Status: draft for approval
-Origin: the `/test-ticket` and `/a-automatiser` skills of the private `wizim-e2e` repository (Interaction / Wizim), rewritten as a portable Claude Code plugin.
+Origin: the `/test-ticket` and `/a-automatiser` skills of a private reference repository, rewritten as a portable Claude Code plugin.
 
 ## 1. Intent
 
 Today two skills let a developer test a delivered Jira ticket from Claude Code and let QA
-arbitrate what deserves an automated test. They work well but only inside `wizim-e2e`:
-they hard-code Wizim's environments, Jira projects, Bitbucket, authentication model,
+arbitrate what deserves an automated test. They work well but only inside the reference repository:
+they hard-code its environments, Jira projects, Bitbucket, authentication model,
 application repositories and a large body of environment knowledge.
 
 We want the same behaviour, installable on **any project** with a **minimal one-time
 configuration**: a person adds the plugin to Claude Code, runs a setup command, answers a
-few questions, and `/test-ticket` then behaves exactly as it does in `wizim-e2e` today,
+few questions, and `/test-ticket` then behaves exactly as it does in the reference repository today,
 on their own tracker, forge, environments and application.
 
 The plugin is published from the author's personal GitHub account (`Zerems`) as a Claude
@@ -50,9 +50,9 @@ Code marketplace, so anyone can install it.
   framework** the host writes its tests in (Playwright, Cypress, Robot Framework, other)
   is also configured: `automation-candidates` proposes, writes and runs tests in that
   framework, through a test MCP server when the host has one.
-- G8. Configured like `wizim-e2e` (French output, Jira, two environments, three
+- G8. Configured like the reference repository (French output, Jira, two environments, three
   channels), the plugin reproduces today's behaviour, including the reading of the
-  existing `[test-ticket]` comments on Jira. **`wizim-e2e` itself is never modified and
+  existing `[test-ticket]` comments on Jira. **The reference repository itself is never modified and
   the plugin is never installed in it**: it stays the read-only reference of the expected
   behaviour.
 
@@ -64,8 +64,8 @@ Code marketplace, so anyone can install it.
   and moves the ticket, as today.
 - Writing automated tests from the plugin itself. `/a-automatiser` hands over to the host
   project's own conventions and agents.
-- Shipping Wizim's environment pitfalls, account tables or anomaly register. They move
-  to `wizim-e2e`'s own pitfalls file.
+- Shipping the reference implementation's environment pitfalls, account tables or anomaly register. They move
+  to the reference repository's own pitfalls file.
 - Bundling a browser or Playwright. The host installs the Playwright MCP server as today.
 - Mobile application testing.
 
@@ -73,9 +73,9 @@ Code marketplace, so anyone can install it.
 
 - A test that passes because the skill adapted to a defect. A 5xx is always a KO.
 - Any secret (token, password, session) printed in chat, in a proof, or in a comment.
-- A plugin that only works when the host repository looks like `wizim-e2e` (e.g. requires
+- A plugin that only works when the host repository looks like the reference repository (e.g. requires
   Playwright setup projects, a `tests/` folder or a `scripts/qa-domains.mjs`).
-- A "generic" plugin whose setup takes longer than cloning `wizim-e2e` did. Minimal
+- A "generic" plugin whose setup takes longer than cloning the reference repository did. Minimal
   configuration is a requirement, not a nice-to-have: a project with one environment, a
   GitHub tracker and no API must be usable in under ten minutes.
 
@@ -90,7 +90,7 @@ Code marketplace, so anyone can install it.
 - Claude must never read `.env`, `.auth/` or the MCP config: scripts load secrets
   themselves and mask them in any output.
 - Browser automation goes through an MCP server, as today (Playwright MCP `browser_*`
-  tools in `wizim-e2e`). On 2026-10-30 no **official** Cypress or Robot Framework MCP
+  tools in the reference repository). On 2026-10-30 no **official** Cypress or Robot Framework MCP
   server exists; community ones do (`cypress-mcp` on npm; `robotframework-mcp` by
   SourceFuse and `rf-mcp` on PyPI). The design therefore never depends on one specific
   server: drivers are tool mappings (4.4), and the builder verifies the community servers'
@@ -116,7 +116,7 @@ functional-test-plugin/                     (GitHub: Zerems/functional-test-plug
   scripts/lib/**/*.test.mjs                 node:test, no deps
   locales/en.json, locales/fr.json
   templates/                                host file skeletons written by setup (config, pitfalls, excluded, .env.example block, .mcp.json entries)
-  docs/                                     README quickstart, adapters guide, config reference, migration from wizim-e2e
+  docs/                                     README quickstart, adapters guide, config reference, migration from the reference repository
 ```
 
 Host project, after `setup`:
@@ -145,7 +145,7 @@ root, so in practice this is immediate; walking up makes worktrees and sub-folde
   delivery module. Input is a ticket key, a tracker URL, or a path to a local Markdown
   file (file mode).
 - Step 3 derives the plan with the same eight rules. The `channels` of the environment
-  (front, bo, api… declared in config) replace the hard-coded Wizim channels. Pitfalls come
+  (front, bo, api… declared in config) replace the reference implementation's hard-coded channels. Pitfalls come
   from the host's pitfalls file. The plan is written in the configured language.
 - Step 4 executes through the `api` script (authentication delegated to the auth adapter)
   and the browser MCP tools of the configured driver (4.4) after the `session` script
@@ -169,7 +169,7 @@ detection is configured (paths to grep, branch pattern). Arbitration:
   the names of agents to use). The skill explores the behaviour with the browser MCP
   driver, writes the spec, then runs it until green through the host's **test MCP
   server** when one is declared (`automation.testMcpServer`: Playwright's
-  `run-test-mcp-server` as used in `wizim-e2e`, or a Cypress / Robot Framework MCP that
+  `run-test-mcp-server` as used in the reference repository, or a Cypress / Robot Framework MCP that
   can run a spec) or else through `automation.runCommand` (`npx playwright test {file}`,
   `npx cypress run --spec {file}`, `robot {file}`). The plugin ships no agent and no
   framework; it ships one short "framework notes" reference per supported framework
@@ -191,7 +191,7 @@ finalises the schema and validates it in preflight with clear error messages):
   "tracker": {
     "type": "jira",                                // jira | github | file | custom
     "module": null,                                // custom: path to an adapter module
-    "baseUrl": "https://wizim-dev.atlassian.net",  // github: "https://api.github.com" (default) or GHES
+    "baseUrl": "https://tracker.example.com",  // github: "https://api.github.com" (default) or GHES
     "projects": ["WV", "WVS"],                     // jira project keys / github "owner/repo" list
     "statuses": {
       "toTest": ["Test"],                          // expected status when the skill runs (else a warning)
@@ -204,9 +204,9 @@ finalises the schema and validates it in preflight with clear error messages):
     "testing": {
       "branch": "testing",                         // branch deployed on this environment
       "channels": {
-        "front": { "url": "https://app-testing.wizim.io", "session": "front" },
-        "bo":    { "url": "https://bo-next-testing.wizim.io", "session": "bo" },
-        "api":   { "url": "https://api-testing.wizim.io", "auth": "agency" }
+        "front": { "url": "https://app-testing.example.com", "session": "front" },
+        "bo":    { "url": "https://bo-testing.example.com", "session": "bo" },
+        "api":   { "url": "https://api-testing.example.com", "auth": "agency" }
       }
     },
     "demo": { "...": "..." }
@@ -217,9 +217,9 @@ finalises the schema and validates it in preflight with clear error messages):
     "recentMinutes": 60,
     "repositoriesDir": "..",                       // relative to host root; env var FT_REPOS_DIR overrides
     "repositories": [                              // "." = the host repository itself (single-repo projects)
-      { "name": "wizim-front-v2", "channel": "front" },
-      { "name": "wizim-backend-v2", "channel": "api" },
-      { "name": "wizim-interim", "channel": "mobile" }   // mobile: "not testable by this skill"
+      { "name": "front-app", "channel": "front" },
+      { "name": "backend-api", "channel": "api" },
+      { "name": "mobile-app", "channel": "mobile" }   // mobile: "not testable by this skill"
     ]
   },
   "browser": {
@@ -238,7 +238,7 @@ finalises the schema and validates it in preflight with clear error messages):
                 "usernameEnv": "API_V2_AGENCY_USERNAME", "passwordEnv": "API_V2_AGENCY_PASSWORD" },
     "custom-example": { "preset": "custom", "module": ".claude/functional-test/adapters/auth.mjs" }
   },
-  "testData": { "prefix": "[E2E]", "emailDomains": ["e2e.wizim.test", "yopmail.com"] },
+  "testData": { "prefix": "[E2E]", "emailDomains": ["e2e.example.test", "yopmail.com"] },
   "pitfallsFile": ".claude/functional-test/pitfalls.md",
   "automation": {
     "framework": "playwright",                     // playwright | cypress | robotframework | other
@@ -340,9 +340,9 @@ createAuth(section, env) → {
 
 Presets: `password-login` (POST JSON `{username,password}` to `loginPath`, reads
 `access_token` and `expires_in` by default, field names configurable), `static-token`
-(`tokenEnv`), `none`, `custom` (module). Wizim's "first agency of the JWT becomes
+(`tokenEnv`), `none`, `custom` (module). The reference implementation's "first agency of the JWT becomes
 `X-Agency-Id`" rule and its disposable worker-account flow live in a custom module inside
-`wizim-e2e`, not in the plugin. The `api` script keeps its contract: `--env`, `--auth
+the reference repository, not in the plugin. The `api` script keeps its contract: `--env`, `--auth
 <name>`, `--credentials <file>` for an alternate account, `--body`, exit code 5 on 5xx,
 masked bodies, token cache per env/auth/account.
 
@@ -414,7 +414,7 @@ storage-state path.
      `data`, `constraints`, `reason?`, `pitfall?`). Replay and `automation-candidates`
      parse **this line only**, so the language of the human part is irrelevant.
 - Legacy: the parser falls back to the current French labelled format when the data line
-  is absent, so existing Wizim comments keep working for replay and candidates.
+  is absent, so existing comments of the reference implementation keep working for replay and candidates.
 - The marker `[test-ticket]` is a constant (the tracker filter users subscribe to
   depends on it) and is not translated.
 
@@ -477,13 +477,13 @@ rewrites only what changed; it never deletes host content.
 - Test data is prefixed and listed, never deleted.
 - Browser-opening commands run outside the sandbox; the SKILL.md says so.
 
-## 5. Acceptance: reproducing wizim-e2e's behaviour without touching it
+## 5. Acceptance: reproducing the reference repository's behaviour without touching it
 
-`wizim-e2e` is never modified and the plugin is never installed in it (decision of
+The reference repository is never modified and the plugin is never installed in it (decision of
 2026-10-30). The acceptance check runs on a **throwaway host folder**, outside any
-repository, configured the way `wizim-e2e` would be:
+repository, configured the way the reference repository would be:
 
-- `.claude/functional-test/config.json` with `language: fr`, Jira tracker on the Wizim
+- `.claude/functional-test/config.json` with `language: fr`, Jira tracker on the reference
   instance, the two environments and three channels, five repositories pointing at the
   existing local clones (read-only, via `delivery.repositoriesDir`), auth `agency` as
   `password-login`, sessions in `persistent-profile` mode (no Playwright project needed),
@@ -511,7 +511,7 @@ is that configuration, anonymised.
 | Dependencies | none; Node ≥ 20 | dotenv & co. from the host's `node_modules` |
 | Skill names | `test-ticket`, `automation-candidates`, `setup` | keeping `a-automatiser` (French) |
 | Delivery not verifiable | `unknown` state: warning, run continues; `absent` stays INCONCLUSIVE | always INCONCLUSIVE (would make `file` mode and single-repo projects unusable) |
-| Host = application repo | allowed as `"."` in `repositories`; read-only rule applies to the others | separate test repository required (wizim-e2e shape) |
+| Host = application repo | allowed as `"."` in `repositories`; read-only rule applies to the others | separate test repository required (shape of the reference repository) |
 | MCP servers | one per session name, shared by environments, named in config | one per session × environment (N×M entries, static `.mcp.json`) |
 | Persistent-profile login | checked by Claude via `browser_navigate` before the plan; human logs in on demand | script-driven login check (impossible without bundling Playwright) |
 | GitHub status | label matched against configured status lists, else open/closed | GitHub Projects columns (GraphQL, v2 scope) |
@@ -519,7 +519,7 @@ is that configuration, anonymised.
 | Browser driver | abstract actions + mapping file per MCP server; Playwright reference, Cypress and Robot Framework community mappings, custom | Playwright MCP hard-coded |
 | Automation framework | configured (`playwright`, `cypress`, `robotframework`, `other`), test MCP server optional, run command fallback | Playwright-only test writing |
 | Licence | MIT | — |
-| wizim-e2e | never modified, plugin never installed there; acceptance on a throwaway host configured like it | migrating wizim-e2e to the plugin |
+| Reference repository | never modified, plugin never installed there; acceptance on a throwaway host configured like it | migrating the reference repository to the plugin |
 
 ## 7. Left to the builder
 

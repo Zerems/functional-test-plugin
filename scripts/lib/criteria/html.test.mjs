@@ -75,8 +75,8 @@ test('a single paragraph becomes the criterion; the "En tant que" intent is drop
 test('an issue key rendered as a Jira macro (link + status badge) is reduced to the bare key, on the same line', () => {
   const macro =
     '\n    <span class="jira-issue-macro" data-jira-key="WV-327" >\n' +
-    '                <a href="https://wizim-dev.atlassian.net/browse/WV-327" class="jira-issue-macro-key issue-link"  title="Titre" >\n' +
-    '            <img class="icon" src="https://wizim-dev.atlassian.net/avatar.png" />\n            WV-327\n        </a>\n' +
+    '                <a href="https://example.atlassian.net/browse/WV-327" class="jira-issue-macro-key issue-link"  title="Titre" >\n' +
+    '            <img class="icon" src="https://example.atlassian.net/avatar.png" />\n            WV-327\n        </a>\n' +
     '                <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-current jira-macro-single-issue-export-pdf">Test</span>\n' +
     '            </span>\n';
   const html = `<p>Cas joués :</p>\n<ul>\n\t<li>T12 (P2) Autre agence : KO — non imputée à ${macro}</li>\n\t<li>T13 (P2) Id inexistant : OK</li>\n</ul>\n<p>Données créées : besoin [E2E] ${macro} 7c2a</p>`;

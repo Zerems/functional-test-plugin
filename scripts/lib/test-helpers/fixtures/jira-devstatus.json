@@ -9,7 +9,7 @@
           "source": { "branch": "feat/x", "url": "" },
           "destination": { "branch": "testing", "url": "" },
           "lastUpdate": "2026-10-09T14:31:01.834+0000",
-          "repositoryName": "wizimadmin/wizim-backend-v2",
+          "repositoryName": "acme/backend-api",
           "url": "https://bitbucket.org/x/y/pull-requests/1"
         },
         {
@@ -19,7 +19,7 @@
           "source": { "branch": "feat/y", "url": "" },
           "destination": { "branch": "testing", "url": "" },
           "lastUpdate": "2026-10-10T08:00:00.000+0000",
-          "repositoryName": "wizimadmin/wizim-front-v2",
+          "repositoryName": "acme/front-app",
           "url": "https://bitbucket.org/x/z/pull-requests/2"
         },
         {
@@ -29,7 +29,7 @@
           "source": { "branch": "feat/z", "url": "" },
           "destination": { "branch": "testing", "url": "" },
           "lastUpdate": "2026-10-11T08:00:00.000+0000",
-          "repositoryName": "wizimadmin/wizim-api",
+          "repositoryName": "acme/legacy-api",
           "url": "https://bitbucket.org/x/w/pull-requests/3"
         },
         {
@@ -39,7 +39,7 @@
           "source": { "branch": "feat/e", "url": "" },
           "destination": { "branch": "main", "url": "" },
           "lastUpdate": "2026-10-12T08:00:00.000+0000",
-          "repositoryName": "wizimadmin/wizim-e2e",
+          "repositoryName": "acme/e2e-tests",
           "url": "https://bitbucket.org/x/e/pull-requests/4"
         }
       ]

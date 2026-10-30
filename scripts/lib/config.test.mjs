@@ -158,8 +158,8 @@ test('environmentOf returns the environment and throws for an unknown one', () =
 
 test('defaultEnvironmentFor uses byProject then fallback', () => {
   const config = validExample();
-  assert.equal(defaultEnvironmentFor(config, 'WVS-12'), 'demo');
-  assert.equal(defaultEnvironmentFor(config, 'WV-12'), 'testing');
+  assert.equal(defaultEnvironmentFor(config, 'PRJS-12'), 'demo');
+  assert.equal(defaultEnvironmentFor(config, 'PRJ-12'), 'testing');
   assert.equal(defaultEnvironmentFor(config, 'acme/app#7'), 'testing');
 });
 
