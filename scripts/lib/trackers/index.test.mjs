@@ -13,7 +13,8 @@ test('createTracker dispatches by type', async () => {
   assert.equal(jira.type, 'jira');
   const file = await createTracker({ tracker: { ...base, type: 'file' } }, env, { root: '/x' });
   assert.equal(file.type, 'file');
-  await assert.rejects(createTracker({ tracker: { ...base, type: 'github' } }, env, {}), /tracker github: not available yet/);
+  const github = await createTracker({ tracker: { ...base, type: 'github', projects: ['acme/webapp'] } }, { GITHUB_TOKEN: 't' }, {});
+  assert.equal(github.type, 'github');
   await assert.rejects(createTracker({ tracker: { ...base, type: 'x' } }, env, {}), /^Error: unknown tracker type: x$/);
 });
 

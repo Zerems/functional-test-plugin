@@ -1,0 +1,9 @@
+{
+  "total_count": 3,
+  "incomplete_results": false,
+  "items": [
+    { "number": 42, "id": 9001 },
+    { "number": 50, "id": 9002, "pull_request": { "url": "https://api.github.com/repos/acme/webapp/pulls/50" } },
+    { "number": 43, "id": 9003 }
+  ]
+}

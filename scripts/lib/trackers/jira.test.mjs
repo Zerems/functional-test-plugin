@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createJiraTracker, normalizeIssue, normalizePullRequests } from './jira.mjs';
-import { MissingSecretError } from './index.mjs';
+import { MissingSecretError, TrackerError } from './index.mjs';
 import { fakeFetch } from '../test-helpers/fake-fetch.mjs';
 
 const fixture = (name) =>
@@ -109,6 +109,16 @@ test('HTTP errors name the status and path, never the token or the body', async 
   await assert.rejects(create(fetchImpl).getIssue('WV-1'), (err) => {
     assert.match(err.message, /^Jira 500 on \/rest\/api\/3\/issue\/WV-1$/);
     assert.equal(/secret-token/.test(err.message), false);
+    return true;
+  });
+});
+
+test('a non-OK response throws a TrackerError carrying status and path', async () => {
+  const fetchImpl = fakeFetch([{ match: () => true, status: 404, body: {} }]);
+  await assert.rejects(create(fetchImpl).getIssue('WV-1'), (err) => {
+    assert.ok(err instanceof TrackerError);
+    assert.equal(err.status, 404);
+    assert.equal(err.path, '/rest/api/3/issue/WV-1');
     return true;
   });
 });

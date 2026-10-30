@@ -3,7 +3,7 @@
  * an error or an output.
  */
 import { basename } from 'node:path';
-import { MissingSecretError } from '../errors.mjs';
+import { MissingSecretError, TrackerError } from '../errors.mjs';
 
 const ISSUE_FIELDS = 'summary,status,issuetype,description,comment,issuelinks,parent,labels,components';
 const TIMEOUT_MS = 30_000;
@@ -25,7 +25,10 @@ export function createJiraTracker(trackerConfig, env, { fetchImpl = fetch, root 
       headers: { Authorization: authorization, Accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!response.ok) throw new Error(`Jira ${response.status} on ${path.split('?')[0]}`);
+    if (!response.ok) {
+      const bare = path.split('?')[0];
+      throw new TrackerError(`Jira ${response.status} on ${bare}`, { status: response.status, path: bare });
+    }
     return response.json();
   }
 

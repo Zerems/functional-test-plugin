@@ -17,8 +17,9 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createJiraTracker } from './jira.mjs';
 import { createFileTracker } from './file.mjs';
+import { createGithubTracker } from './github.mjs';
 
-export { MissingSecretError } from '../errors.mjs';
+export { MissingSecretError, TrackerError } from '../errors.mjs';
 
 /**
  * Builds the tracker named by `config.tracker.type`. `env` is the environment
@@ -32,7 +33,7 @@ export async function createTracker(config, env, { fetchImpl = fetch, root } = {
     case 'file':
       return createFileTracker(root);
     case 'github':
-      throw new Error('tracker github: not available yet');
+      return createGithubTracker(trackerConfig, env, { fetchImpl });
     case 'custom': {
       const mod = await import(pathToFileURL(resolve(root, trackerConfig.module)).href);
       return mod.default(trackerConfig, env, { fetchImpl, root });

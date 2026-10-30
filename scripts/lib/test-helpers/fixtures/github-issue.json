@@ -1,0 +1,10 @@
+{
+  "id": 9001,
+  "number": 42,
+  "title": "Checkout fails with an empty cart",
+  "state": "open",
+  "html_url": "https://github.com/acme/webapp/issues/42",
+  "labels": [{ "name": "bug" }, { "name": "ready-for-test" }, { "name": "tested-ok" }],
+  "body": "## Intent\n\nShow an error on an empty cart.\n\n- [ ] Error message is shown\n- [ ] No order is created\n",
+  "user": { "login": "alice" }
+}

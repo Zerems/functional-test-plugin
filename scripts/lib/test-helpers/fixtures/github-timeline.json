@@ -1,0 +1,9 @@
+[
+  { "event": "labeled", "label": { "name": "bug" } },
+  { "event": "cross-referenced", "source": { "type": "issue", "issue": { "number": 7, "pull_request": { "url": "https://api.github.com/repos/acme/webapp/pulls/7" }, "repository": { "full_name": "acme/webapp" } } } },
+  { "event": "cross-referenced", "source": { "type": "issue", "issue": { "number": 8, "repository": { "full_name": "acme/webapp" } } } },
+  { "event": "cross-referenced", "source": { "type": "issue", "issue": { "number": 9, "pull_request": { "url": "https://api.github.com/repos/acme/api/pulls/9" }, "repository": { "full_name": "acme/api" } } } },
+  { "event": "connected", "subject": { "type": "PullRequest", "number": 10 } },
+  { "event": "connected", "subject": { "type": "Issue", "number": 11 } },
+  { "event": "cross-referenced", "source": { "type": "issue", "issue": { "number": 7, "pull_request": { "url": "https://api.github.com/repos/acme/webapp/pulls/7" }, "repository": { "full_name": "acme/webapp" } } } }
+]

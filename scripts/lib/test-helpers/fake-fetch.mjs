@@ -1,6 +1,6 @@
 /**
  * Test double for `fetch`. `routes` is an array of
- * `{ match: (url, init) => boolean, status = 200, body }`; the first matching
+ * `{ match: (url, init) => boolean, status = 200, headers, body }`; the first matching
  * route answers (`body` is serialised as JSON unless it is a string).
  * The returned function records every call in `calls: [{ url, init }]`.
  */
@@ -11,9 +11,9 @@ export function fakeFetch(routes) {
     calls.push(call);
     const route = routes.find((r) => r.match(call.url, init));
     if (!route) throw new Error(`fakeFetch: no route for ${call.url}`);
-    const { status = 200, body } = route;
+    const { status = 200, headers, body } = route;
     const payload = typeof body === 'string' ? body : JSON.stringify(body ?? {});
-    return new Response(payload, { status });
+    return new Response(payload, { status, headers });
   };
   impl.calls = calls;
   return impl;
