@@ -115,5 +115,14 @@
   "session.noKnownHost": "no host",
   "session.setupRun": "session {session}: {reason}; running its setup command for {host}",
   "session.setupForced": "session {session}: forced; running its setup command for {host}",
-  "session.setupFailed": "setup command did not complete: {status}"
+  "session.setupFailed": "setup command did not complete: {status}",
+  "candidates.usage": "usage: candidates.mjs [--json] [--all]",
+  "candidates.none": "No pending candidate.",
+  "candidates.covered": "Already covered: {list}",
+  "candidates.excluded": "Excluded by QA: {list}",
+  "candidates.withoutCandidate": "No candidate in the latest comment: {list}",
+  "candidates.noneListed": "none",
+  "candidates.missingCase": "(case missing from the comment)",
+  "candidates.truncated": "Warning: the tracker search was truncated, the list may be incomplete.",
+  "candidates.unsupported": "Candidates are unavailable with the file tracker."
 }

@@ -115,5 +115,14 @@
   "session.noKnownHost": "aucun hôte",
   "session.setupRun": "session {session} : {reason} ; rejeu de sa commande de setup sur {host}",
   "session.setupForced": "session {session} : forcée ; rejeu de sa commande de setup sur {host}",
-  "session.setupFailed": "la commande de setup ne s’est pas terminée : {status}"
+  "session.setupFailed": "la commande de setup ne s’est pas terminée : {status}",
+  "candidates.usage": "usage : candidates.mjs [--json] [--all]",
+  "candidates.none": "Aucun candidat en attente.",
+  "candidates.covered": "Déjà couverts : {list}",
+  "candidates.excluded": "Écartés par QA : {list}",
+  "candidates.withoutCandidate": "Sans candidat dans le dernier commentaire : {list}",
+  "candidates.noneListed": "aucun",
+  "candidates.missingCase": "(cas absent du commentaire)",
+  "candidates.truncated": "Attention : la recherche du tracker a été tronquée, la liste peut être incomplète.",
+  "candidates.unsupported": "Les candidats ne sont pas disponibles avec le tracker fichier."
 }
