@@ -22,5 +22,12 @@
   "preflight.blocked": "--- blocked",
   "preflight.ok": "OK",
   "preflight.ko": "KO",
-  "preflight.warn": "WARNING"
+  "preflight.warn": "WARNING",
+  "warnings.doNotTest": "Status \"{status}\": do not test this ticket (report dismissed or not qualified).",
+  "warnings.statusUnexpected": "Status \"{status}\" instead of \"{expected}\": confirm that the delivery is really ready to test.",
+  "warnings.envForced": "Environment forced to \"{env}\" while the default for this ticket is \"{default}\".",
+  "warnings.otherTargets": "The merged pull requests target {targets}, not {branch}: check the chosen environment.",
+  "warnings.partial": "Partial delivery: {repository} has merged pull requests but none into {branch} - check git log origin/{branch} of that repository before concluding.",
+  "warnings.deliveryUnknown": "Delivery not verified: {reason}.",
+  "warnings.staleRef": "Local refs of {repository} are behind (latest local commit {localDate}, merge {mergedAt}): run git fetch before concluding."
 }

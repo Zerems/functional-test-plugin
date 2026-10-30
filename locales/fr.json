@@ -22,5 +22,12 @@
   "preflight.blocked": "--- bloqué",
   "preflight.ok": "OK",
   "preflight.ko": "KO",
-  "preflight.warn": "AVERTISSEMENT"
+  "preflight.warn": "AVERTISSEMENT",
+  "warnings.doNotTest": "Statut « {status} » : ne pas tester ce ticket (signalement écarté ou non qualifié).",
+  "warnings.statusUnexpected": "Statut « {status} » au lieu de « {expected} » : confirmer que la livraison est bien à tester.",
+  "warnings.envForced": "Env forcé « {env} » alors que le défaut pour ce ticket est « {default} ».",
+  "warnings.otherTargets": "Les PR mergées visent {targets}, pas {branch} : vérifier l’environnement choisi.",
+  "warnings.partial": "Livraison partielle : {repository} a des PR mergées mais aucune vers {branch} — vérifier git log origin/{branch} de ce dépôt avant de conclure.",
+  "warnings.deliveryUnknown": "Livraison non vérifiée : {reason}.",
+  "warnings.staleRef": "Refs locales de {repository} en retard (dernier commit local {localDate}, merge {mergedAt}) : faire git fetch avant de conclure."
 }
