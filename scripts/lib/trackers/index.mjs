@@ -18,14 +18,7 @@ import { pathToFileURL } from 'node:url';
 import { createJiraTracker } from './jira.mjs';
 import { createFileTracker } from './file.mjs';
 
-/** Thrown when environment variables holding credentials are missing. */
-export class MissingSecretError extends Error {
-  constructor(variables) {
-    super(`missing environment variables: ${variables.join(', ')}`);
-    this.name = 'MissingSecretError';
-    this.variables = variables;
-  }
-}
+export { MissingSecretError } from '../errors.mjs';
 
 /**
  * Builds the tracker named by `config.tracker.type`. `env` is the environment

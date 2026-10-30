@@ -3,7 +3,7 @@
  * an error or an output.
  */
 import { basename } from 'node:path';
-import { MissingSecretError } from './index.mjs';
+import { MissingSecretError } from '../errors.mjs';
 
 const ISSUE_FIELDS = 'summary,status,issuetype,description,comment,issuelinks,parent,labels,components';
 const TIMEOUT_MS = 30_000;
