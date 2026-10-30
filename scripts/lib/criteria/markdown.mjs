@@ -7,6 +7,8 @@
  * (`~~…~~`) is kept: a struck criterion is out of scope and must stay visible.
  */
 
+import { resolveStrike, numberCriteria } from './shared.mjs';
+
 const FENCE = /^\s*(```|~~~)/;
 const HEADING = /^\s{0,3}#{1,6}(\s|$)/;
 const RULE = /^\s{0,3}([-*_])(\s*\1){2,}\s*$/;
@@ -78,8 +80,7 @@ export function markdownToText(md) {
 function criterionFrom(raw) {
   const visible = inlineToText(raw);
   const outside = visible.replace(/~~[\s\S]*?~~/g, '').replace(/\s+/g, ' ').trim();
-  const struck = visible.includes('~~') && (outside.length === 0 || /^(ca|ac|crit[èe]re|criteria?)?\s*\d*\s*[:\-–.)]*$/i.test(outside));
-  return { text: struck ? visible.replace(/~~/g, '').replace(/\s+/g, ' ').trim() : visible, struck };
+  return resolveStrike(visible, outside);
 }
 
 /**
@@ -87,8 +88,8 @@ function criterionFrom(raw) {
  *
  * With lists: one criterion per item, nested items included in document order
  * (a continuation line is joined to its item). Without any list: one criterion
- * per paragraph (consecutive lines joined), the first line being dropped when it
- * is an intent sentence ("As a …", "En tant que …"). Headings and code blocks are never criteria.
+ * per paragraph (consecutive lines joined), the first paragraph being dropped when its
+ * first line is an intent sentence ("As a …", "En tant que …"). Headings and code blocks are never criteria.
  */
 export function extractCriteriaFromMarkdown(md) {
   if (!md) return [];
@@ -108,10 +109,13 @@ export function extractCriteriaFromMarkdown(md) {
     }
   } else {
     let paragraph = [];
+    let first = true;
     const flush = () => {
       if (paragraph.length === 0) return;
-      if (fragments.length === 0 && INTENT.test(inlineToText(paragraph[0]))) paragraph.shift();
-      if (paragraph.length > 0) fragments.push(paragraph.join(' '));
+      // The whole first paragraph is dropped when it opens with an intent sentence (it may be hard-wrapped).
+      const intent = first && INTENT.test(inlineToText(paragraph[0]));
+      first = false;
+      if (!intent) fragments.push(paragraph.join(' '));
       paragraph = [];
     };
     for (const e of entries) {
@@ -120,8 +124,5 @@ export function extractCriteriaFromMarkdown(md) {
     }
     flush();
   }
-  return fragments
-    .map(criterionFrom)
-    .filter((c) => c.text.length > 0)
-    .map((c, i) => ({ number: i + 1, text: c.text, struck: c.struck }));
+  return numberCriteria(fragments.map(criterionFrom));
 }

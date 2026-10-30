@@ -85,3 +85,24 @@ test('an issue key rendered as a Jira macro (link + status badge) is reduced to 
     'Cas joués :\n\n- T12 (P2) Autre agence : KO — non imputée à WV-327\n- T13 (P2) Id inexistant : OK\n\nDonnées créées : besoin [E2E] WV-327 7c2a',
   );
 });
+
+test('a label-only item is not struck', () => {
+  assert.deepEqual(extractCriteriaFromHtml('<ul><li>CA 2</li><li>3.</li></ul>'), [
+    { number: 1, text: 'CA 2', struck: false },
+    { number: 2, text: '3.', struck: false },
+  ]);
+});
+
+test('a struck item may keep an AC or criteria label outside the strike-through', () => {
+  assert.deepEqual(extractCriteriaFromHtml('<ul><li>AC 2 - <del>out of scope</del></li><li>Criteria 3 : <s>dropped</s></li></ul>'), [
+    { number: 1, text: 'AC 2 - out of scope', struck: true },
+    { number: 2, text: 'Criteria 3 : dropped', struck: true },
+  ]);
+});
+
+test('an English "As a" intent paragraph is dropped when there is no list', () => {
+  assert.deepEqual(
+    extractCriteriaFromHtml('<p>As a CR I want a button</p><p>The button is greyed out</p>').map((c) => c.text),
+    ['The button is greyed out'],
+  );
+});

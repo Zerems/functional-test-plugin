@@ -75,3 +75,13 @@ test('markdownToText strips emphasis, keeps ~~, bullets and numbering, links and
     '# Title\n\nbold it code b2 i2 ~~gone~~\n\n- text and alt\n1. one',
   );
 });
+
+test('a hard-wrapped intent paragraph is dropped entirely', () => {
+  const md = 'As a CR,\nI want X,\nso that Y\n\nThe button is greyed\n';
+  assert.deepEqual(extractCriteriaFromMarkdown(md).map((c) => c.text), ['The button is greyed']);
+  assert.deepEqual(extractCriteriaFromMarkdown('En tant que CR,\nje veux X\n\nEn tant que Z\n').map((c) => c.text), ['En tant que Z']);
+});
+
+test('a label-only item is not struck', () => {
+  assert.deepEqual(extractCriteriaFromMarkdown('- CA 2\n'), [{ number: 1, text: 'CA 2', struck: false }]);
+});

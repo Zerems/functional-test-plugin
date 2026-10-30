@@ -6,6 +6,8 @@
  * by mistake.
  */
 
+import { resolveStrike, numberCriteria } from './shared.mjs';
+
 const ENTITIES = {
   amp: '&',
   lt: '<',
@@ -152,9 +154,7 @@ export function htmlToText(html) {
 function criterionFrom(fragment) {
   const visible = plainText(fragment);
   const outsideStrike = plainText(fragment.replace(/<(del|s|strike)(\s[^>]*)?>[\s\S]*?<\/\1>/gi, ''));
-  // Struck if all the text is, or if only a label remains ("CA2 :", "3.").
-  const struck = visible.length > 0 && (outsideStrike.length === 0 || /^(ca|ac|crit[èe]re|criteria?)?\s*\d*\s*[:\-–.)]*$/i.test(outsideStrike));
-  return { text: struck ? visible.replace(/~~/g, '').replace(/\s+/g, ' ').trim() : visible, struck };
+  return resolveStrike(visible, outsideStrike);
 }
 
 /**
@@ -174,8 +174,5 @@ export function extractCriteriaFromHtml(html) {
     if (paragraphs.length > 0 && /^\s*(<[^>]+>\s*)*(en tant que|as a)\b/i.test(paragraphs[0].replace(STRIKE, ''))) paragraphs.shift();
     fragments = paragraphs.flatMap((p) => p.split(LINE_BREAK));
   }
-  return fragments
-    .map(criterionFrom)
-    .filter((c) => c.text.length > 0)
-    .map((c, i) => ({ number: i + 1, text: c.text, struck: c.struck }));
+  return numberCriteria(fragments.map(criterionFrom));
 }
