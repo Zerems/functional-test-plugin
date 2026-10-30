@@ -1,0 +1,13 @@
+{
+  "name": "zerems-plugins",
+  "owner": { "name": "Rémy Albinet" },
+  "metadata": { "description": "Rémy Albinet's Claude Code plugins", "version": "0.1.0" },
+  "plugins": [
+    {
+      "name": "functional-test",
+      "source": "./",
+      "description": "Functional testing of delivered tickets from Claude Code: plan, execute, verdict, comment; QA arbitration of automation candidates.",
+      "version": "0.1.0"
+    }
+  ]
+}
