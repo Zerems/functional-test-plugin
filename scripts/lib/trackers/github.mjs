@@ -7,6 +7,7 @@ import { MissingSecretError, TrackerError } from '../errors.mjs';
 const TIMEOUT_MS = 30_000;
 const PER_PAGE = 100;
 const MAX_SEARCH_PAGES = 10;
+const MAX_LINK_PAGES = 20;
 const KEY_PATTERN = /(?:([\w.-]+\/[\w.-]+))?#(\d+)/;
 const EXACT_KEY = /^(?:([\w.-]+\/[\w.-]+))?#(\d+)$/;
 const ISSUE_URL = /^https?:\/\/[^/\s]+\/([\w.-]+\/[\w.-]+)\/issues\/(\d+)(?:[/?#].*)?$/;
@@ -50,11 +51,11 @@ export function createGithubTracker(trackerConfig, env, { fetchImpl = fetch } = 
 
   const readJson = async (path) => (await request(path)).json();
 
-  /** Collects every page of an array endpoint, following `Link: rel="next"`. */
+  /** Collects the pages of an array endpoint (at most MAX_LINK_PAGES), following `Link: rel="next"`. */
   async function readPages(path) {
     const items = [];
     let next = path;
-    while (next) {
+    for (let page = 0; next && page < MAX_LINK_PAGES; page += 1) {
       const response = await request(next);
       items.push(...(await response.json()));
       next = parseLinkNext(response.headers.get('link'));

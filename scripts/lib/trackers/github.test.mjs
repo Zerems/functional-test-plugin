@@ -126,6 +126,40 @@ test('getIssue paginates comments via Link header', async () => {
   assert.equal(fetchImpl.calls[2].init.headers.Authorization, 'Bearer ghp-secret');
 });
 
+test('a pagination link outside the tracker origin is refused and never requested', async () => {
+  for (const next of ['https://evil.test/comments?page=2', 'http://api.github.com/repos/acme/webapp/issues/42/comments?page=2']) {
+    const fetchImpl = fakeFetch([
+      route('/repos/acme/webapp/issues/42', issueFixture),
+      route('/repos/acme/webapp/issues/42/comments?per_page=100', commentsPage1, {
+        headers: { Link: `<${next}>; rel="next"` },
+      }),
+    ]);
+    await assert.rejects(create(fetchImpl).getIssue('acme/webapp#42'), /outside the tracker host/);
+    assert.equal(fetchImpl.calls.length, 2);
+    assert.equal(fetchImpl.calls.some((c) => c.url === next || c.url.includes('evil.test')), false);
+  }
+});
+
+test('a never-ending Link chain stops after the page cap', async () => {
+  let served = 0;
+  const fetchImpl = fakeFetch([
+    route('/repos/acme/webapp/issues/42', issueFixture),
+    {
+      match: (url) => url.includes('/comments'),
+      get body() {
+        served += 1;
+        return [{ id: served, user: { login: 'alice' }, created_at: '2026-10-20T09:00:00Z', body: `c${served}` }];
+      },
+      get headers() {
+        return { Link: `<https://api.github.com/repos/acme/webapp/issues/42/comments?page=${served + 1}>; rel="next"` };
+      },
+    },
+  ]);
+  const issue = await create(fetchImpl).getIssue('acme/webapp#42');
+  assert.equal(issue.comments.length, 20);
+  assert.equal(fetchImpl.calls.length, 21);
+});
+
 test('parseLinkNext extracts the next relation', () => {
   assert.equal(parseLinkNext('<https://a.test/p?page=2>; rel="next", <https://a.test/p?page=9>; rel="last"'), 'https://a.test/p?page=2');
   assert.equal(parseLinkNext('<https://a.test/p?page=1>; rel="prev"'), null);
@@ -215,8 +249,8 @@ test('searchWithMarker flags truncation', async () => {
 });
 
 test('whoami returns the login', async () => {
-  const fetchImpl = fakeFetch([route('/user', { login: 'remy' })]);
-  assert.equal(await create(fetchImpl).whoami(), 'remy');
+  const fetchImpl = fakeFetch([route('/user', { login: 'alice' })]);
+  assert.equal(await create(fetchImpl).whoami(), 'alice');
 });
 
 test('a non-OK response throws a TrackerError carrying status and path', async () => {
