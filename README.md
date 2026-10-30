@@ -87,8 +87,10 @@ server whose tools were not verified; **notes** = guidance only; **planned** = n
 ## Security
 
 - Secrets live only in `.env`. The config names environment variables (`usernameEnv`,
-  `tokenEnv`...), never values. Scripts load `.env` themselves and mask every secret in what
-  they print; no error carries a token.
+  `tokenEnv`...), never values. Scripts load `.env` themselves and mask secret-looking
+  fields and the known secret values in what they print; no error carries a token. A local
+  ticket file must be `.md`, `.markdown` or `.txt`: `.env*`, `.auth/` and `.mcp.json` are
+  refused.
 - Claude never reads `.env`, `.auth/**` or `.mcp.json`, and never types a credential in a
   browser: you log in yourself when a session has expired.
 - `.auth/` (token caches, browser profiles, screenshots) and `.env` must be gitignored; the
@@ -109,14 +111,19 @@ but not enforced by the plugin:
       "Read(./.auth/**)",
       "Read(./.mcp.json)",
       "Edit(./.env)",
-      "Edit(./.auth/**)"
+      "Edit(./.auth/**)",
+      "Edit(./.mcp.json)"
     ],
     "allow": [
-      "Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/*)"
+      "Bash(node <plugin root>/scripts/*)"
     ]
   }
 }
 ```
+
+`<plugin root>` stands for the plugin's installation directory (the value of
+`${CLAUDE_PLUGIN_ROOT}`): substitute the real path, a settings file does not expand that
+variable. The setup skill suggests the same block in its report.
 
 ## Languages
 

@@ -174,4 +174,4 @@ In `config.language`:
 6. Suggested host `.claude/settings.json` permissions (documented, not written):
    `"deny": ["Read(.env)", "Edit(.env)", "Read(.auth/**)", "Edit(.auth/**)", "Read(.mcp.json)", "Edit(.mcp.json)"]`
    and `"allow": ["Bash(node <plugin root>/scripts/*)"]`, `<plugin root>` being the value
-   of `${CLAUDE_PLUGIN_ROOT}`.
+   of `${CLAUDE_PLUGIN_ROOT}`: substitute the real path, settings do not expand it.
