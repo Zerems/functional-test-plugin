@@ -111,7 +111,7 @@ docs/config-reference.md, docs/adapters.md, docs/migration-from-wizim-e2e.md
 
 `plugin.json`: `{ "name": "functional-test", "version": "0.1.0", "description": "Functional testing of delivered tickets from Claude Code: plan, execute, verdict, comment; QA arbitration of automation candidates.", "author": { "name": "Rémy Albinet" }, "repository": "https://github.com/Zerems/functional-test-plugin", "license": "MIT", "keywords": ["qa", "testing", "jira", "github", "playwright"] }`.
 `marketplace.json`: `{ "name": "zerems-plugins", "owner": { "name": "Rémy Albinet" }, "metadata": { "description": "Rémy Albinet's Claude Code plugins", "version": "0.1.0" }, "plugins": [{ "name": "functional-test", "source": "./", "description": "<same as plugin.json>", "version": "0.1.0" }] }`.
-`package.json`: `{ "name": "functional-test-plugin", "version": "0.1.0", "private": true, "type": "module", "engines": { "node": ">=20" }, "scripts": { "test": "node --test \"scripts/**/*.test.mjs\"" } }`.
+`package.json`: `{ "name": "functional-test-plugin", "version": "0.1.0", "private": true, "type": "module", "engines": { "node": ">=20" }, "scripts": { "test": "node --test" } }`.
 `.gitignore`: `node_modules/`, `.DS_Store`. `LICENSE`: MIT, 2026, Rémy Albinet. `CHANGELOG.md`: `## 0.1.0 (unreleased)`.
 
 - [ ] **Step 2: Write the failing tests**
